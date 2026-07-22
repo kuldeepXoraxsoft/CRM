@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Neutral canvas + ink (warm, not pure gray/black) */
+  --color-canvas: #f7f7f5;
+  --color-surface: #ffffff;
+  --color-border: #e3e1dc;
+  --color-border-strong: #cbc8c1;
+  --color-ink: #21201c;
+  --color-ink-muted: #6b6a63;
+  --color-ink-faint: #9a988f;
+
+  /* Primary: deep teal */
+  --color-primary-50: #e9f5f3;
+  --color-primary-100: #c9e6e2;
+  --color-primary-500: #0c7c72;
+  --color-primary-600: #0a6961;
+  --color-primary-700: #08544e;
+
+  /* Danger: warm rust red */
+  --color-danger-50: #fbeae5;
+  --color-danger-500: #c4432b;
+  --color-danger-600: #a83722;
+
+  /* Warning: amber */
+  --color-warning-50: #fbf0de;
+  --color-warning-500: #b9791a;
+  --color-warning-600: #9a6414;
+
+  /* Success: forest green */
+  --color-success-50: #e7f4ec;
+  --color-success-500: #2f7a4d;
+  --color-success-600: #256440;
+
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Consistent visible focus ring for keyboard users, app-wide */
+  :focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+  }
+}

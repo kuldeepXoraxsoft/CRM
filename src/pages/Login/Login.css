@@ -1,0 +1,313 @@
+@reference "../../index.css";
+
+/* ===========================
+   Page
+=========================== */
+
+.login-page {
+  @apply relative min-h-screen flex items-center justify-center overflow-hidden px-6;
+
+  background: linear-gradient(
+    180deg,
+    #8fd7ff 0%,
+    #cdeeff 45%,
+    #ffffff 100%
+  );
+}
+
+/* ===========================
+   Decorative circles
+=========================== */
+
+.circle {
+  position: absolute;
+  border: 2px solid rgba(255,255,255,.6);
+  border-radius: 9999px;
+}
+
+.circle-one {
+  width: 900px;
+  height: 900px;
+  left: -320px;
+  bottom: -420px;
+}
+
+.circle-two {
+  width: 900px;
+  height: 900px;
+  right: -320px;
+  top: -420px;
+}
+
+/* ===========================
+   Clouds
+=========================== */
+
+.login-page::before{
+  content:"";
+  position:absolute;
+
+  width:500px;
+  height:180px;
+
+  top:90px;
+  left:120px;
+
+  border-radius:999px;
+
+  background:white;
+
+  opacity:.55;
+
+  filter:blur(45px);
+}
+
+.login-page::after{
+  content:"";
+  position:absolute;
+
+  width:420px;
+  height:160px;
+
+  right:100px;
+  bottom:120px;
+
+  border-radius:999px;
+
+  background:white;
+
+  opacity:.45;
+
+  filter:blur(45px);
+}
+
+/* ===========================
+   Logo
+=========================== */
+
+.logo{
+  @apply absolute top-8 left-10 flex items-center gap-3 z-20;
+}
+
+.logo h2{
+  @apply text-xl font-semibold text-gray-800;
+}
+
+.logo-box{
+  @apply w-11 h-11 rounded-xl flex items-center justify-center text-white;
+
+  background:#111827;
+}
+
+/* ===========================
+   Login Card
+=========================== */
+
+.login-card{
+
+  width:430px;
+
+  border-radius:30px;
+
+  padding:42px;
+
+  position:relative;
+  z-index:5;
+
+  background:rgba(255,255,255,.72);
+
+  backdrop-filter:blur(20px);
+
+  box-shadow:
+      0 25px 60px rgba(0,0,0,.12);
+
+  border:1px solid rgba(255,255,255,.55);
+}
+
+/* ===========================
+   Icon
+=========================== */
+
+.login-icon{
+
+  width:72px;
+  height:72px;
+
+  margin:auto;
+
+  border-radius:20px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:white;
+
+  box-shadow:
+      0 12px 30px rgba(0,0,0,.12);
+}
+
+/* ===========================
+   Heading
+=========================== */
+
+.login-title{
+  @apply mt-6 text-center text-3xl font-bold;
+
+  color:#111827;
+}
+
+.login-subtitle{
+
+  @apply text-center mt-3;
+
+  color:#6b7280;
+
+  line-height:1.7;
+}
+
+/* ===========================
+   Form
+=========================== */
+
+.login-form{
+  @apply mt-8 space-y-5;
+}
+
+.login-options{
+  @apply flex items-center justify-between;
+}
+
+.forgot-btn{
+
+  background:none;
+  border:none;
+
+  color:#0c7c72;
+
+  font-weight:500;
+
+  cursor:pointer;
+}
+
+.forgot-btn:hover{
+  text-decoration:underline;
+}
+
+.login-btn{
+  width:100%;
+}
+
+/* ===========================
+   Divider
+=========================== */
+
+.divider{
+
+  display:flex;
+  align-items:center;
+
+  gap:18px;
+
+  margin:34px 0;
+}
+
+.divider span{
+
+  flex:1;
+
+  height:1px;
+
+  background:#d7d7d7;
+}
+
+.divider p{
+
+  color:#777;
+
+  font-size:14px;
+
+  white-space:nowrap;
+}
+
+/* ===========================
+   Social Buttons
+=========================== */
+
+.social-login{
+
+  display:grid;
+
+  grid-template-columns:repeat(3,1fr);
+
+  gap:16px;
+}
+
+.social-btn{
+
+  height:52px;
+
+  border-radius:16px;
+
+  background:white;
+
+  border:1px solid #ececec;
+
+  display:flex;
+
+  justify-content:center;
+
+  align-items:center;
+
+  cursor:pointer;
+
+  transition:.25s;
+}
+
+.social-btn:hover{
+
+  transform:translateY(-2px);
+
+  box-shadow:0 10px 20px rgba(0,0,0,.08);
+}
+
+/* ===========================
+   Responsive
+=========================== */
+
+@media (max-width:640px){
+
+.login-card{
+
+    width:100%;
+
+    padding:30px;
+
+    border-radius:24px;
+}
+
+.logo{
+
+    left:24px;
+    top:24px;
+}
+
+.circle-one{
+
+    width:600px;
+    height:600px;
+
+    left:-250px;
+    bottom:-300px;
+}
+
+.circle-two{
+
+    width:600px;
+    height:600px;
+
+    right:-250px;
+    top:-300px;
+}
+
+}
