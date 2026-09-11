@@ -1,0 +1,394 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------
+// ROLES
+// -----------------------------
+
+enum Role {
+  employee
+  manager
+  admin
+  superAdmin
+}
+
+// -----------------------------
+// NOTIFICATION TYPES
+// -----------------------------
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_UPDATED
+  TASK_COMPLETED
+  FOLLOW_UP_REMINDER
+  LEAD_ASSIGNED
+  LEAD_UPDATED
+  LEAD_CONVERTED
+  ACCOUNT_UPDATED
+  COMMENT
+  MENTION
+  PAYMENT_DUE
+  ANNOUNCEMENT
+  SYSTEM
+}
+
+// -----------------------------
+// DEPARTMENTS
+// -----------------------------
+
+model Department {
+  id   String @id @default(cuid())
+  name String @unique
+
+  users    User[]
+  teams    Team[]
+  leads    Lead[]
+  accounts Account[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// -----------------------------
+// USERS
+// -----------------------------
+
+model User {
+  id       String @id @default(cuid())
+  name     String
+  email    String @unique
+  password String
+
+  role   Role   @default(employee)
+  status String @default("Active")
+
+  // Department
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  // Employee -> Manager
+  managerId String?
+  manager   User?   @relation("ManagerEmployees", fields: [managerId], references: [id])
+
+  employees User[] @relation("ManagerEmployees")
+
+  // Team
+  teamId String?
+  team   Team?   @relation("TeamMembers", fields: [teamId], references: [id])
+
+  joinedDate DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Leads / Accounts
+  leadsAsAM    Lead[]    @relation("LeadCyvoraAM")
+  accountsAsAM Account[] @relation("AccountCyvoraAM")
+
+  // Tasks
+  todos             Todo[]
+  tasksAssignedToMe AssignedTask[] @relation("TaskAssignee")
+  tasksAssignedByMe AssignedTask[] @relation("TaskAssignedBy")
+  taskComments      TaskComment[]
+
+  // Teams
+  managedTeams Team[] @relation("TeamManager")
+
+  // Activity
+  activities Activity[]
+
+  // Notifications
+  notifications Notification[]
+
+  // Refresh Tokens
+  refreshTokens RefreshToken[]
+
+  @@index([departmentId])
+  @@index([teamId])
+  @@index([managerId])
+}
+
+// -----------------------------
+// TEAMS
+// -----------------------------
+
+model Team {
+  id   String @id @default(cuid())
+  name String
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  managerId String
+  manager   User   @relation("TeamManager", fields: [managerId], references: [id])
+
+  members User[] @relation("TeamMembers")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([departmentId])
+  @@index([managerId])
+}
+
+// -----------------------------
+// REFRESH TOKENS
+// -----------------------------
+
+model RefreshToken {
+  id String @id @default(cuid())
+
+  tokenHash String @unique
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+// -----------------------------
+// LEADS
+// -----------------------------
+
+model Lead {
+  id           String @id @default(cuid())
+  customerName String
+
+  // Department
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  // Cyvora AM
+  cyvoraAMId String?
+  cyvoraAM   User?   @relation("LeadCyvoraAM", fields: [cyvoraAMId], references: [id])
+
+  clientAM String?
+
+  status          String    @default("New Lead")
+  traffic         String?
+  dateAdded       DateTime  @default(now())
+  followUpDate    DateTime?
+  statusNotes     String?
+  nextStep        String?
+  dealsInProgress String?
+
+  agreementStatus String @default("Not Sent")
+
+  payment           String?
+  creditLimit       String?
+  theirRoutes       String?
+  theirRequirements String?
+  ratesOffered      String?
+  routeListOnSheets String?
+
+  leadSource  String?
+  phoneNumber String?
+  teamsHandle String?
+  email       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Follow ups
+  followUpHistory FollowUpEntry[]
+
+  // Converted account
+  convertedToAccount Account?
+
+  @@index([departmentId])
+  @@index([cyvoraAMId])
+}
+
+// -----------------------------
+// ACCOUNTS
+// -----------------------------
+
+model Account {
+  id           String @id @default(cuid())
+  customerName String
+
+  // Department
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  // Cyvora AM
+  cyvoraAMId String?
+  cyvoraAM   User?   @relation("AccountCyvoraAM", fields: [cyvoraAMId], references: [id])
+
+  clientAM String?
+
+  status       String    @default("Live")
+  traffic      String?
+  dateAdded    DateTime  @default(now())
+  followUpDate DateTime?
+
+  statusNotes String?
+  nextStep    String?
+
+  agreementStatus String @default("Signed")
+
+  payment           String?
+  creditLimit       String?
+  theirRoutes       String?
+  theirRequirements String?
+  ratesOffered      String?
+  routeListOnSheets String?
+
+  phoneNumber String?
+  teamsHandle String?
+  email       String?
+
+  // Lead conversion
+  convertedFromLeadId String? @unique
+  convertedFromLead   Lead?   @relation(fields: [convertedFromLeadId], references: [id])
+
+  convertedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Follow ups
+  followUpHistory FollowUpEntry[]
+
+  @@index([departmentId])
+  @@index([cyvoraAMId])
+}
+
+// -----------------------------
+// FOLLOW UP HISTORY
+// -----------------------------
+
+model FollowUpEntry {
+  id String @id @default(cuid())
+
+  previousDate DateTime?
+  newDate      DateTime
+  remark       String
+
+  updatedAt DateTime @default(now())
+
+  // Lead
+  leadId String?
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  // Account
+  accountId String?
+  account   Account? @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------
+// TODO
+// -----------------------------
+
+model Todo {
+  id String @id @default(cuid())
+
+  title    String
+  dueDate  DateTime?
+  priority String    @default("Medium")
+  status   String    @default("Pending")
+  notes    String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// -----------------------------
+// ASSIGNED TASKS
+// -----------------------------
+
+model AssignedTask {
+  id String @id @default(cuid())
+
+  title        String
+  managerNotes String?
+
+  priority String    @default("Medium")
+  status   String    @default("Pending")
+  dueDate  DateTime?
+
+  // Assignee
+  assigneeId String
+  assignee   User   @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  // Assigned by
+  assignedById String
+  assignedBy   User   @relation("TaskAssignedBy", fields: [assignedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comments TaskComment[]
+}
+
+// -----------------------------
+// TASK COMMENTS
+// -----------------------------
+
+model TaskComment {
+  id String @id @default(cuid())
+
+  text String
+
+  taskId String
+  task   AssignedTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// -----------------------------
+// ACTIVITY
+// -----------------------------
+
+model Activity {
+  id String @id @default(cuid())
+
+  message String
+  type    String @default("general")
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// -----------------------------
+// NOTIFICATIONS
+// -----------------------------
+
+model Notification {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    NotificationType
+  title   String
+  message String
+
+  entityType String?
+  entityId   String?
+
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+}
