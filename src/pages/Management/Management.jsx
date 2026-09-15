@@ -12,8 +12,8 @@ import DataTable from "../../components/ui/DataTable";
 import Tabs from "../../components/ui/Tabs";
 import ConfirmDialog from "../../components/ConfirmDialog";
 
-import DepartmentModal from "./Departmentmodal/DepartmentModal";
-import AdminModal from "./Adminmodal/AdminModal";
+import DepartmentModal from "./departmentModal/departmentModal";
+import AdminModal from "./adminModal/adminModal";
 
 import managementApi from "../../api/Managementapi";
 import { useToast } from "../../context/toastContext";
