@@ -5,7 +5,7 @@ import { User, CalendarDays, Flag, Repeat } from "lucide-react";
 import CommentsThread from "../../components/CommentsThread";
 
 import { STATUS_OPTIONS } from "../../data/taskData";
-import { tasksApi } from "../../api/tasksApi";
+import { tasksApi } from "../../api/Tasksapi";
 import { toDateInputValue } from "../../utils/formateDate";
 import { useEmployees } from "../../hooks/useEmployees";
 import { useAuth } from "../../context/AuthContext";

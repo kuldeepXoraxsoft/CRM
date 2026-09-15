@@ -19,8 +19,8 @@ import TaskModal from "./TaskModal";
 import AssignedTaskModal from "./AssignedTaskModal";
 import AssignTaskModal from "./AssignTaskModal";
 
-import { todosApi } from "../../api/todosApi";
-import { tasksApi } from "../../api/tasksApi";
+import { todosApi } from "../../api/Todosapi";
+import { tasksApi } from "../../api/Tasksapi";
 import { toDateInputValue } from "../../utils/formateDate";
 import { useAuth } from "../../context/AuthContext";
 

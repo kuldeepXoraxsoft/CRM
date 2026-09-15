@@ -4,7 +4,7 @@ import { UploadCloud, FileSpreadsheet, AlertTriangle } from "lucide-react";
 
 import { Modal, Button } from "../../../components/ui";
 import { LEAD_HEADER_MAP, createEmptyLead } from "../../../data/Leaddata";
-import { leadsApi } from "../../../api/leadsApi";
+import { leadsApi } from "../../../api/Leadsapi";
 import { useToast } from "../../../context/toastContext";
 
 

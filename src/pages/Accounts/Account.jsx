@@ -9,7 +9,7 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import { useToast } from "../../context/toastContext";
 import AccountModal from "./AccountModal/AccountModal";
 
-import { accountsApi } from "../../api/accountsApi";
+import { accountsApi } from "../../api/Accountsapi";
 import {
   ACCOUNT_TABLE_COLUMNS,
   ACCOUNT_STATUS_VARIANT,
