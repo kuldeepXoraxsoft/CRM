@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Button, Input, Checkbox } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
-import "./login.css";
+import "./Login.css";
 
 export default function Login() {
   const navigate = useNavigate();
