@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Modal, Button, Select, Badge } from "../../components/ui";
 import { User, CalendarDays, Flag, Repeat } from "lucide-react";
 
-import CommentsThread from "../../components/CommentsThread";
+import CommentsThread from "../../components/Commentsthread";
 
-import { STATUS_OPTIONS } from "../../data/taskData";
+import { STATUS_OPTIONS } from "../../data/Taskdata";
 import { tasksApi } from "../../api/Tasksapi";
 import { toDateInputValue } from "../../utils/formateDate";
 import { useEmployees } from "../../hooks/useEmployees";

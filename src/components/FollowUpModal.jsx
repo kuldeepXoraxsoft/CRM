@@ -4,7 +4,7 @@ import { History } from "lucide-react";
 
 import { Modal, Button, Textarea } from "./ui";
 import DateSelector from "./ui/DateSelector";
-import { formatHistoryTimestamp } from "../utils/followUpUtils";
+import { formatHistoryTimestamp } from "../utils/Followuputils";
 
 function formatFollowUpDateTime(value) {
   if (!value) return "Not set";

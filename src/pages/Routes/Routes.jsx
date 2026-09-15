@@ -16,7 +16,7 @@ import {
   CONTENT_TYPE_VARIANT,
   ROUTE_STATUS_OPTIONS,
   ROUTE_STATUS_VARIANT,
-} from "../../data/RouteData";
+} from "../../data/Routedata";
 
 
 import "./routes.css";
