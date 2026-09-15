@@ -9,7 +9,7 @@ import {
   AGREEMENT_STATUS_OPTIONS,
   PAYMENT_OPTIONS,
   LEAD_SOURCE_OPTIONS,
-} from "../../data/leadData";
+} from "../../data/Leaddata";
 
 import { useEmployees } from "../../hooks/useEmployees";
 

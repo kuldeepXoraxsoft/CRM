@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Modal, Button, Input, Select } from "../components/ui";
 
-import { createEmptyTeam } from "../data/TeamData";
+import { createEmptyTeam } from "../data/Teamdata";
 import { useEmployees } from "../hooks/useEmployees";
 import { useAuth } from "../context/AuthContext";
 import { ROLES } from "../utils/roles";

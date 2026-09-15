@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { teamsApi } from "../api/teamsApi";
+import { teamsApi } from "../api/Teamsapi";
 
 export function useTeams() {
   const [teams, setTeams] = useState([]);

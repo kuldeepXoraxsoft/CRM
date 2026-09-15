@@ -5,7 +5,7 @@ import {
   createEmptyEmployee,
   EMPLOYEE_ROLE_OPTIONS,
   EMPLOYEE_STATUS_OPTIONS,
-} from "../data/EmployeeData";
+} from "../data/Employeedata";
 
 import { ROLES } from "../utils/roles";
 import { useEmployees } from "../hooks/useEmployees";

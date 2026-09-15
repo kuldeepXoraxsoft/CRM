@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { activityApi } from "../api/activityApi";
+import { activityApi } from "../api/Activityapi";
 
 export function useActivity() {
   const [activities, setActivities] = useState([]);
