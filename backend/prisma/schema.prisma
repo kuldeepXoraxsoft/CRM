@@ -50,6 +50,7 @@ model Department {
   teams    Team[]
   leads    Lead[]
   accounts Account[]
+  activities Activity[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -360,11 +361,22 @@ model Activity {
   message String
   type    String @default("general")
 
+  // Department scope
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
   actorId String?
-  actor   User?   @relation(fields: [actorId], references: [id])
+  actor   User? @relation(fields: [actorId], references: [id])
 
   createdAt DateTime @default(now())
+
+  @@index([departmentId])
+  @@index([actorId])
+  @@index([departmentId, createdAt])
 }
+
+
+
 
 // -----------------------------
 // NOTIFICATIONS
@@ -382,6 +394,8 @@ model Notification {
 
   entityType String?
   entityId   String?
+
+  reminderKey String? @unique
 
   isRead Boolean   @default(false)
   readAt DateTime?

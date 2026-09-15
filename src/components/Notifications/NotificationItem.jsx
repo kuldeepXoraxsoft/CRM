@@ -96,7 +96,7 @@ export default function NotificationItem({
   return (
     <div
       className={`group flex gap-4 border-b border-border px-5 py-4 transition-colors hover:bg-canvas ${
-        !notification.read ? "bg-primary-50/40" : ""
+        !notification.isRead ? "bg-primary-50/40" : ""
       }`}
     >
       {/* Icon */}
@@ -104,7 +104,7 @@ export default function NotificationItem({
       <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-canvas">
         <Icon className={config.color} size={20} />
 
-        {!notification.read && (
+        {!notification.isRead && (
           <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-primary-500 ring-2 ring-surface" />
         )}
       </div>
@@ -145,7 +145,7 @@ export default function NotificationItem({
 
         <div className="mt-3 flex items-center gap-2">
 
-          {!notification.read && (
+          {!notification.isRead && (
             <Button
               size="sm"
               variant="outline"

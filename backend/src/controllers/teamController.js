@@ -156,7 +156,8 @@ export const createTeam = asyncHandler(async (req, res) => {
   await logActivity(
     req.user.id,
     `${req.user.name} created a new team "${team.name}"`,
-    "team"
+    "team",
+    req.user.departmentId,
   );
 
   res.status(201).json(team);
@@ -264,7 +265,8 @@ export const updateTeam = asyncHandler(async (req, res) => {
   await logActivity(
     req.user.id,
     `${req.user.name} updated team "${updated.name}"`,
-    "team"
+    "team",
+    req.user.departmentId,
   );
 
   res.json(updated);
@@ -307,7 +309,8 @@ export const deleteTeam = asyncHandler(async (req, res) => {
   await logActivity(
     req.user.id,
     `${req.user.name} deleted team "${existing.name}"`,
-    "team"
+    "team",
+    req.user.departmentId,
   );
 
   res.status(204).send();

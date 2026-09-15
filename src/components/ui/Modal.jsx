@@ -36,27 +36,34 @@ export default function Modal({
   showCloseButton = true,
 }) {
   const dialogRef = useRef(null)
+const onCloseRef = useRef(onClose)
 
-  useEffect(() => {
-    if (!isOpen) return
+useEffect(() => {
+  onCloseRef.current = onClose
+}, [onClose])
 
-    function handleKeyDown(e) {
-      if (e.key === 'Escape') onClose?.()
+ useEffect(() => {
+  if (!isOpen) return
+
+  function handleKeyDown(e) {
+    if (e.key === 'Escape') {
+      onCloseRef.current?.()
     }
-    document.addEventListener('keydown', handleKeyDown)
+  }
 
-    // Lock background scroll while open
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+  document.addEventListener('keydown', handleKeyDown)
 
-    // Move focus into the dialog
-    dialogRef.current?.focus()
+  const prevOverflow = document.body.style.overflow
+  document.body.style.overflow = 'hidden'
 
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = prevOverflow
-    }
-  }, [isOpen, onClose])
+  // Only runs when isOpen changes
+  dialogRef.current?.focus()
+
+  return () => {
+    document.removeEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = prevOverflow
+  }
+}, [isOpen])
 
   if (!isOpen) return null
 

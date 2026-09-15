@@ -1,10 +1,15 @@
-import { NavLink } from 'react-router-dom'
-import { X, Zap } from 'lucide-react'
-import { cn } from '../../lib/cn'
-import { NAV_ITEMS } from '../../config/navigation'
-
+import { NavLink } from "react-router-dom";
+import { X, Zap } from "lucide-react";
+import { cn } from "../../lib/cn";
+import { useAuth } from "../../context/AuthContext";
+import { getNavItems } from "../../config/navigation";
 
 export default function Sidebar({ isOpen = false, onClose }) {
+  const { currentUser } = useAuth();
+  console.log(currentUser?.role);
+
+  const navItems = getNavItems(currentUser?.role);
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -18,18 +23,39 @@ export default function Sidebar({ isOpen = false, onClose }) {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-border bg-surface',
-          'transition-transform duration-200 md:static md:translate-x-0',
-          isOpen ? 'translate-x-0' : '-translate-x-full',
+          "group fixed inset-y-0 left-0 z-40 flex w-54 flex-col border-r border-border bg-surface",
+
+          // Desktop collapsed
+          "md:static md:w-16 md:translate-x-0",
+
+          // Expand on hover
+          "md:hover:w-54",
+
+          // Transition
+          "transition-[width,transform] duration-200",
+
+          // Mobile
+          isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-16 shrink-0 items-center justify-between px-5">
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-500 text-white">
+        {/* Header */}
+        <div className="flex h-16 shrink-0 items-center justify-between px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary-500 text-white">
               <Zap size={18} />
             </span>
-            <span className="text-base font-semibold text-ink">Pipeline</span>
+
+            <span
+              className={cn(
+                "whitespace-nowrap text-base font-semibold text-ink",
+                "md:opacity-0 md:transition-opacity md:duration-150",
+                "md:group-hover:opacity-100"
+              )}
+            >
+              CyvoraTech
+            </span>
           </div>
+
           <button
             type="button"
             onClick={onClose}
@@ -40,32 +66,49 @@ export default function Sidebar({ isOpen = false, onClose }) {
           </button>
         </div>
 
+        {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
-          {NAV_ITEMS.map(({ label, to, icon: Icon, end }) => (
+          {navItems.map(({ label, to, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               onClick={onClose}
+              title={label}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  "flex items-center rounded-md py-2 text-sm font-medium",
+                  "transition-colors duration-150",
+                  "gap-3 px-3",
+
                   isActive
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-ink-muted hover:bg-canvas hover:text-ink',
+                    ? "bg-primary-50 text-primary-700"
+                    : "text-ink-muted hover:bg-canvas hover:text-ink"
                 )
               }
             >
-              <Icon size={18} />
-              {label}
+              {({ isActive }) => (
+                <>
+                  <Icon
+                    size={18}
+                    strokeWidth={isActive ? 2.5 : 2}
+                    className="shrink-0 transition-all duration-150"
+                  />
+
+                  <span
+                    className={cn(
+                      "whitespace-nowrap transition-opacity duration-150",
+                      "md:opacity-0 md:group-hover:opacity-100"
+                    )}
+                  >
+                    {label}
+                  </span>
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
-
-        <div className="border-t border-border px-5 py-4">
-          <p className="text-xs text-ink-faint">v1.0.0 &middot; Pipeline CRM</p>
-        </div>
       </aside>
     </>
-  )
+  );
 }

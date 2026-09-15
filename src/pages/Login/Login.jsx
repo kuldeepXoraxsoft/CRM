@@ -1,33 +1,58 @@
 import { useState } from "react";
-import { Mail, Lock, LogIn } from "lucide-react";
+import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF, FaApple } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 import { Button, Input, Checkbox } from "../../components/ui";
+import { useAuth } from "../../context/AuthContext";
 import "./login.css";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [form, setForm] = useState({
     email: "",
     password: "",
     remember: false,
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleChange = (field, value) => {
     setForm((prev) => ({
       ...prev,
       [field]: value,
     }));
+    if (error) setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.email.trim() || !form.password) {
+      setError("Please enter your email and password.");
+      return;
+    }
 
-    console.log(form);
+    setIsSubmitting(true);
+    setError("");
 
-    navigate("/dashboard")
+    try {
+      const user = await login(form.email.trim(), form.password, form.remember);
+
+      // SuperAdmin has no Leads/Accounts/Tasks of their own - land them
+      // straight on the Management page (Departments + Admins) instead
+      // of the regular Dashboard.
+      navigate(user.role === "superAdmin" ? "/management" : "/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid email or password.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -55,6 +80,7 @@ export default function Login() {
           onSubmit={handleSubmit}
         >
           <Input
+            type="email"
             placeholder="Email"
             value={form.email}
             leftIcon={<Mail size={18} />}
@@ -64,10 +90,20 @@ export default function Login() {
           />
 
           <Input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Password"
             value={form.password}
             leftIcon={<Lock size={18} />}
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="password-toggle"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            }
             onChange={(e) =>
               handleChange("password", e.target.value)
             }
@@ -93,12 +129,15 @@ export default function Login() {
             </button>
           </div>
 
+          {error && <p className="login-error">{error}</p>}
+
           <Button
             type="submit"
             variant="primary"
             className="login-btn"
+            disabled={isSubmitting}
           >
-            Get Started
+            {isSubmitting ? "Signing in..." : "Sign In"}
           </Button>
         </form>
       </div>

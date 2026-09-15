@@ -1,93 +1,71 @@
+export const PRIORITY_OPTIONS = [
+  { value: "High", label: "High" },
+  { value: "Medium", label: "Medium" },
+  { value: "Low", label: "Low" },
+];
+
+export const STATUS_OPTIONS = [
+  { value: "Pending", label: "Pending" },
+  { value: "In Progress", label: "In Progress" },
+  { value: "Completed", label: "Completed" },
+];
+
 export const INITIAL_TODOS = [
   {
     id: 1,
-    title: "Follow up with ABC Pvt Ltd",
-    dueDate: "2026-07-25",
+    title: "Finish quotation for Digintra",
+    dueDate: "2026-09-15",
     priority: "High",
     status: "Pending",
-    notes: "Need manager approval before sending quotation.",
+    notes: "Send updated rates before EOD.",
   },
   {
     id: 2,
-    title: "Update CRM Records",
-    dueDate: "2026-07-26",
+    title: "Follow up with Kite on Germany route",
+    dueDate: "2026-09-13",
     priority: "Medium",
     status: "In Progress",
-    notes: "Update after client meeting.",
+    notes: "",
   },
   {
     id: 3,
-    title: "Prepare Proposal",
-    dueDate: "2026-07-27",
+    title: "Update promo list on LinkedIn",
+    dueDate: "2026-09-10",
     priority: "Low",
     status: "Completed",
-    notes: "Proposal shared with customer.",
+    notes: "Posted local bypass routes.",
   },
 ];
 
 export const INITIAL_ASSIGNED_TASKS = [
   {
     id: 101,
-    title: "Call XYZ Pvt Ltd",
-    assignedBy: "Rahul Sharma",
-    dueDate: "2026-07-25",
+    title: "Get CIS region routes from partners",
+    assignedBy: "Arun Arya",
+    dueDate: "2026-09-18",
     priority: "High",
     status: "Pending",
-    managerNotes:
-      "Discuss pricing and schedule demo before Friday.",
+    managerNotes: "Focus on Kazakhstan and Uzbekistan first.",
     employeeUpdate: "",
   },
   {
     id: 102,
-    title: "Prepare Monthly Sales Report",
-    assignedBy: "Rahul Sharma",
-    dueDate: "2026-07-28",
+    title: "Test Uzbekistan Local Bypass route",
+    assignedBy: "Arun Arya",
+    dueDate: "2026-09-14",
     priority: "Medium",
     status: "In Progress",
-    managerNotes:
-      "Include region-wise sales comparison.",
-    employeeUpdate:
-      "Revenue section completed.",
+    managerNotes: "Use AirSpider vendor for this test.",
+    employeeUpdate: "Tested on tool, passed. Waiting on live traffic confirmation.",
   },
   {
     id: 103,
-    title: "Collect Customer Feedback",
-    assignedBy: "Ankit Singh",
-    dueDate: "2026-07-30",
+    title: "Share signed agreement with Zafta Link",
+    assignedBy: "Harshit",
+    dueDate: "2026-09-08",
     priority: "Low",
-    status: "Pending",
-    managerNotes:
-      "Call only premium customers.",
-    employeeUpdate: "",
-  },
-];
-
-export const PRIORITY_OPTIONS = [
-  {
-    value: "High",
-    label: "High",
-  },
-  {
-    value: "Medium",
-    label: "Medium",
-  },
-  {
-    value: "Low",
-    label: "Low",
-  },
-];
-
-export const STATUS_OPTIONS = [
-  {
-    value: "Pending",
-    label: "Pending",
-  },
-  {
-    value: "In Progress",
-    label: "In Progress",
-  },
-  {
-    value: "Completed",
-    label: "Completed",
+    status: "Completed",
+    managerNotes: "",
+    employeeUpdate: "Sent and countersigned.",
   },
 ];

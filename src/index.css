@@ -56,3 +56,30 @@
     outline-offset: 2px;
   }
 }
+
+/* ===================================
+   Global Scrollbar
+=================================== */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d8d6d1 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #d8d6d1;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #c5c2bb;
+}

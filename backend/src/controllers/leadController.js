@@ -48,11 +48,6 @@ async function resolveCyvoraAMId(cyvoraAM, currentUser) {
     },
   };
 
-  /*
-   * SuperAdmin can select AM globally.
-   * Other roles can only select an AM
-   * from their own department.
-   */
   if (currentUser.role !== "superAdmin") {
     if (!currentUser.departmentId) {
       throw new ApiError(400, "Your account is not assigned to a department.");
@@ -92,16 +87,10 @@ async function buildLeadData(
 ) {
   let cyvoraAMId;
 
-  /*
-   * 1. Existing DB relation has highest priority
-   */
   if (existing.cyvoraAMId) {
     cyvoraAMId = existing.cyvoraAMId;
   } else if (body.cyvoraAMId) {
 
-  /*
-   * 2. Normal form may directly send cyvoraAMId
-   */
     const amWhere = {
       id: body.cyvoraAMId,
     };
@@ -133,19 +122,9 @@ async function buildLeadData(
     cyvoraAMId = am.id;
   } else if (body.cyvoraAM) {
 
-  /*
-   * 3. Bulk upload sends:
-   *
-   * cyvoraAM: "Arun Arya"
-   *
-   * Resolve name -> User ID
-   */
     cyvoraAMId = await resolveCyvoraAMId(body.cyvoraAM, currentUser);
   } else if (currentUser.role === "employee") {
 
-  /*
-   * 4. Employee automatically becomes the AM
-   */
     cyvoraAMId = currentUser.id;
   }
 
@@ -300,6 +279,7 @@ export const createLead = asyncHandler(async (req, res) => {
     req.user.id,
     `${req.user.name} created a new lead "${lead.customerName}"`,
     "lead",
+    req.user.departmentId,
   );
 
   res.status(201).json(lead);
@@ -322,19 +302,10 @@ export const bulkCreateLeads = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Every lead needs a Customer Name.");
   }
 
-  /*
-   * buildLeadData is async because
-   * Cyvora AM name needs DB lookup.
-   *
-   * Therefore resolve all data first.
-   */
   const leadData = await Promise.all(
     validLeads.map((lead) => buildLeadData(lead, req.user, {}, true)),
   );
 
-  /*
-   * Only DB creation is inside transaction.
-   */
   const created = await prisma.$transaction(
     leadData.map((data) =>
       prisma.lead.create({
@@ -344,9 +315,6 @@ export const bulkCreateLeads = asyncHandler(async (req, res) => {
     ),
   );
 
-  /*
-   * Notifications happen after successful transaction.
-   */
   await Promise.all(
     created.map((lead) =>
       notifyLeadStakeholders({
@@ -365,6 +333,7 @@ export const bulkCreateLeads = asyncHandler(async (req, res) => {
     req.user.id,
     `${req.user.name} imported ${created.length} leads`,
     "lead",
+    req.user.departmentId,
   );
 
   res.status(201).json({
@@ -413,6 +382,7 @@ export const updateLead = asyncHandler(async (req, res) => {
     req.user.id,
     `${req.user.name} updated lead "${updated.customerName}"`,
     "lead",
+    req.user.departmentId,
   );
 
   res.json(updated);
@@ -446,6 +416,7 @@ export const deleteLead = asyncHandler(async (req, res) => {
     req.user.id,
     `${req.user.name} deleted lead "${existing.customerName}"`,
     "lead",
+    req.user.departmentId,
   );
 
   res.status(204).send();
@@ -514,6 +485,7 @@ export const updateLeadFollowUp = asyncHandler(async (req, res) => {
     req.user.id,
     `${req.user.name} updated follow-up for "${updated.customerName}"`,
     "lead",
+    req.user.departmentId,
   );
 
   res.json(updated);
@@ -538,7 +510,18 @@ export const convertLeadToAccount = asyncHandler(async (req, res) => {
   }
 
   if (!CONVERTIBLE_LEAD_STATUSES.includes(lead.status)) {
-    throw new ApiError(400, "This lead cannot be converted to an account.");
+    throw new ApiError(
+      400,
+      "This lead cannot be converted to an account."
+    );
+  }
+
+  // Department is required for CRM scope.
+  if (!lead.departmentId) {
+    throw new ApiError(
+      400,
+      "Lead is not assigned to a department and cannot be converted."
+    );
   }
 
   const account = await prisma.$transaction(async (tx) => {
@@ -546,54 +529,52 @@ export const convertLeadToAccount = asyncHandler(async (req, res) => {
       data: {
         customerName: lead.customerName,
 
-        departmentId: lead.departmentId,
+        department: {
+          connect: {
+            id: lead.departmentId,
+          },
+        },
 
-        cyvoraAMId: lead.cyvoraAMId,
+        ...(lead.cyvoraAMId
+          ? {
+              cyvoraAM: {
+                connect: {
+                  id: lead.cyvoraAMId,
+                },
+              },
+            }
+          : {}),
 
         clientAM: lead.clientAM,
-
         status: lead.status,
-
         traffic: lead.traffic,
-
         dateAdded: lead.dateAdded,
-
         followUpDate: lead.followUpDate,
-
         statusNotes: lead.statusNotes,
-
         nextStep: lead.nextStep,
-
-        dealsInProgress: lead.dealsInProgress,
-
         agreementStatus: lead.agreementStatus,
-
         payment: lead.payment,
-
         creditLimit: lead.creditLimit,
-
         theirRoutes: lead.theirRoutes,
-
         theirRequirements: lead.theirRequirements,
-
         ratesOffered: lead.ratesOffered,
-
         routeListOnSheets: lead.routeListOnSheets,
-
-        leadSource: lead.leadSource,
-
+        // leadSource: lead.leadSource,
         phoneNumber: lead.phoneNumber,
-
         teamsHandle: lead.teamsHandle,
-
         email: lead.email,
 
-        convertedFromLeadId: lead.id,
+        convertedFromLead: {
+          connect: {
+            id: lead.id,
+          },
+        },
 
         convertedAt: new Date(),
       },
     });
 
+    // Remove the original lead after account creation.
     await tx.lead.delete({
       where: {
         id: lead.id,
@@ -605,23 +586,16 @@ export const convertLeadToAccount = asyncHandler(async (req, res) => {
 
   const stakeholderIds = await getDepartmentStakeholderIds({
     departmentId: lead.departmentId,
-
     cyvoraAMId: lead.cyvoraAMId,
-
     actorId: req.user.id,
   });
 
   await notifyMany({
     userIds: stakeholderIds,
-
     type: "LEAD_CONVERTED",
-
     title: "Lead converted",
-
     message: `${req.user.name} converted "${lead.customerName}" into an account.`,
-
     entityType: "account",
-
     entityId: account.id,
   });
 
@@ -629,7 +603,84 @@ export const convertLeadToAccount = asyncHandler(async (req, res) => {
     req.user.id,
     `${req.user.name} converted lead "${lead.customerName}" to account`,
     "lead",
+    req.user.departmentId,
   );
 
   res.status(201).json(account);
+});
+export const downloadLeadSample = asyncHandler(async (req, res) => {
+  const headers = [
+    "Customer Name",
+    "Cyvora AM",
+    "Client AM",
+    "Status",
+    "Traffic",
+    "Date Added",
+    "Follow Up Date",
+    "Status Notes",
+    "Next Step",
+    "Deals In Progress",
+    "Agreement Status",
+    "Payment",
+    "Credit Limit",
+    "Their Routes",
+    "Their Requirements",
+    "Rates Offered",
+    "Route List On Sheets",
+    "Lead Source",
+    "Phone Number",
+    "Teams Handle",
+    "Email",
+  ];
+
+  const sampleRow = [
+    "ABC Logistics",
+    "Arun Arya",
+    "Rahul Sharma",
+    "New Lead",
+    "High",
+    "2026-09-14",
+    "2026-09-20",
+    "Interested in our services",
+    "Share quotation",
+    "Initial discussion",
+    "Not Sent",
+    "Pending",
+    "500000",
+    "Delhi - Mumbai",
+    "Regular freight requirement",
+    "₹1200",
+    "Yes",
+    "Website",
+    "9876543210",
+    "ABC Teams",
+    "rahul@example.com",
+  ];
+
+  const escapeCsvValue = (value) => {
+    const stringValue = String(value ?? "");
+
+    if (
+      stringValue.includes(",") ||
+      stringValue.includes('"') ||
+      stringValue.includes("\n")
+    ) {
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+
+    return stringValue;
+  };
+
+  const csv = [
+    headers.map(escapeCsvValue).join(","),
+    sampleRow.map(escapeCsvValue).join(","),
+  ].join("\r\n");
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="lead-import-sample.csv"'
+  );
+
+  res.status(200).send("\uFEFF" + csv);
 });

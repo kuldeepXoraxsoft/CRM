@@ -8,29 +8,14 @@ import {
 } from "../../components/ui";
 
 const PRIORITY_OPTIONS = [
-  {
-    value: "high",
-    label: "High",
-  },
-  {
-    value: "medium",
-    label: "Medium",
-  },
-  {
-    value: "low",
-    label: "Low",
-  },
+  { value: "high", label: "High" },
+  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
 ];
 
 const STATUS_OPTIONS = [
-  {
-    value: "pending",
-    label: "Pending",
-  },
-  {
-    value: "in-progress",
-    label: "In Progress",
-  },
+  { value: "pending", label: "Pending" },
+  { value: "in-progress", label: "In Progress" },
 ];
 
 const INITIAL_FORM = {
@@ -46,8 +31,7 @@ export default function AddTodoModal({
   onClose,
   onCreate,
 }) {
-  const [form, setForm] = useState(INITIAL_FORM);
-
+  const [form, setForm] = useState({ ...INITIAL_FORM });
   const [errors, setErrors] = useState({});
 
   function update(field, value) {
@@ -55,10 +39,18 @@ export default function AddTodoModal({
       ...prev,
       [field]: value,
     }));
+
+    // Remove field error as soon as user starts fixing it
+    if (errors[field]) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
+    }
   }
 
   function resetForm() {
-    setForm(INITIAL_FORM);
+    setForm({ ...INITIAL_FORM });
     setErrors({});
   }
 
@@ -73,19 +65,17 @@ export default function AddTodoModal({
       newErrors.dueDate = "Please select a due date.";
     }
 
-    if (Object.keys(newErrors).length) {
+    if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
     onCreate({
-      id: Date.now(),
       ...form,
       completed: false,
     });
 
     resetForm();
-
     onClose();
   }
 
@@ -101,7 +91,7 @@ export default function AddTodoModal({
       title="Create Personal Todo"
       size="md"
       footer={
-        <>
+        <div className="flex justify-end gap-2">
           <Button
             variant="outline"
             onClick={handleClose}
@@ -112,18 +102,15 @@ export default function AddTodoModal({
           <Button onClick={handleSubmit}>
             Save Todo
           </Button>
-        </>
+        </div>
       }
     >
       <div className="space-y-5">
-
         <Input
           label="Title"
           placeholder="Finish quotation"
           value={form.title}
-          onChange={(e) =>
-            update("title", e.target.value)
-          }
+          onChange={(e) => update("title", e.target.value)}
           error={errors.title}
           required
         />
@@ -132,9 +119,7 @@ export default function AddTodoModal({
           type="date"
           label="Due Date"
           value={form.dueDate}
-          onChange={(e) =>
-            update("dueDate", e.target.value)
-          }
+          onChange={(e) => update("dueDate", e.target.value)}
           error={errors.dueDate}
           required
         />
@@ -143,30 +128,23 @@ export default function AddTodoModal({
           label="Priority"
           options={PRIORITY_OPTIONS}
           value={form.priority}
-          onChange={(e) =>
-            update("priority", e.target.value)
-          }
+          onChange={(e) => update("priority", e.target.value)}
         />
 
         <Select
           label="Status"
           options={STATUS_OPTIONS}
           value={form.status}
-          onChange={(e) =>
-            update("status", e.target.value)
-          }
+          onChange={(e) => update("status", e.target.value)}
         />
 
         <Textarea
           label="Notes"
           placeholder="Add reminder, meeting details or anything..."
           value={form.notes}
-          onChange={(e) =>
-            update("notes", e.target.value)
-          }
+          onChange={(e) => update("notes", e.target.value)}
           rows={5}
         />
-
       </div>
     </Modal>
   );

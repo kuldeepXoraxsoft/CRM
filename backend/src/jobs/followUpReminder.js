@@ -68,26 +68,32 @@ async function notifyFollowUp({
   followUpDate,
   customerName,
 }) {
-  const alreadySent = await prisma.notification.findFirst({
+  if (!followUpDate || !userId) return;
+
+  const now = new Date();
+  const scheduledDate = new Date(followUpDate);
+
+  if (scheduledDate > now) return;
+
+  const reminderKey = [
+    entityType,
+    entityId,
+    scheduledDate.toISOString(),
+  ].join(":");
+
+  const alreadySent = await prisma.notification.findUnique({
     where: {
-      userId,
-      type: "FOLLOW_UP_REMINDER",
-      entityType,
-      entityId,
-      message: {
-        contains: formatFollowUpKey(followUpDate),
-      },
+      reminderKey,
+    },
+    select: {
+      id: true,
     },
   });
 
   if (alreadySent) return;
 
-  const now = new Date();
-
-  const isOverdue = followUpDate < now;
-
-  const formattedDate = formatFollowUpDate(followUpDate);
-  const followUpKey = formatFollowUpKey(followUpDate);
+  const formattedDate = formatFollowUpDate(scheduledDate);
+  const isOverdue = scheduledDate < now;
 
   await notify({
     userId,
@@ -98,11 +104,13 @@ async function notifyFollowUp({
       : "Follow-up due",
 
     message: isOverdue
-      ? `Follow-up for "${customerName}" was scheduled for ${formattedDate} and is overdue. [${followUpKey}]`
-      : `Follow-up for "${customerName}" is due at ${formattedDate}. [${followUpKey}]`,
+      ? `Follow-up for "${customerName}" was scheduled for ${formattedDate} and is overdue.`
+      : `Follow-up for "${customerName}" is due at ${formattedDate}.`,
 
     entityType,
     entityId,
+
+    reminderKey,
   });
 }
 

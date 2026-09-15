@@ -1,0 +1,282 @@
+.date-selector {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: fit-content;
+}
+
+.date-selector-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.date-selector-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  padding: 8px 10px;
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: 13.5px;
+  color: var(--color-ink);
+  min-width: 190px;
+}
+
+.date-selector-trigger:hover {
+  border-color: var(--color-primary-300);
+}
+
+.date-selector-icon {
+  color: var(--color-ink-muted);
+  flex-shrink: 0;
+}
+
+.date-selector-placeholder {
+  color: var(--color-ink-faint);
+}
+
+.date-selector-clear {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  color: var(--color-ink-faint);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.date-selector-clear:hover {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+.date-selector-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1200;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+  padding: 14px;
+  width: 280px;
+}
+
+.date-selector-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-canvas);
+}
+
+.date-selector-preset-btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-canvas);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.date-selector-preset-btn:hover {
+  background: var(--color-primary-50);
+  border-color: var(--color-primary-200);
+  color: var(--color-primary-700);
+}
+
+.date-selector-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.date-selector-nav button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-ink-muted);
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.date-selector-nav button:hover {
+  background: var(--color-canvas);
+}
+
+.date-selector-nav-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.date-selector-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.date-selector-weekdays span {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-ink-faint);
+  padding: 4px 0;
+}
+
+.date-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.date-selector-cell {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  font-size: 12.5px;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.date-selector-cell:hover {
+  background: var(--color-primary-50);
+}
+
+.date-selector-cell-outside {
+  color: var(--color-border);
+}
+
+.date-selector-cell-today {
+  font-weight: 700;
+  color: var(--color-primary-500);
+}
+
+.date-selector-cell-selected,
+.date-selector-cell-range-start,
+.date-selector-cell-range-end {
+  background: var(--color-primary-500);
+  color: var(--color-surface);
+  font-weight: 600;
+}
+
+.date-selector-cell-selected:hover,
+.date-selector-cell-range-start:hover,
+.date-selector-cell-range-end:hover {
+  background: var(--color-primary-600);
+}
+
+.date-selector-cell-in-range {
+  background: var(--color-primary-100);
+  border-radius: 0;
+}
+
+.date-selector-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-canvas);
+}
+
+.date-selector-footer-cancel {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.date-selector-footer-cancel:hover {
+  background: var(--color-canvas);
+}
+
+.date-selector-footer-apply {
+  border: none;
+  background: var(--color-primary-500);
+  border-radius: 7px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-surface);
+  cursor: pointer;
+}
+
+.date-selector-footer-apply:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.date-selector-footer-apply:not(:disabled):hover {
+  background: var(--color-primary-600);
+}
+.date-selector-time {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-canvas);
+}
+
+.date-selector-time-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.date-selector-time-header svg {
+  color: var(--color-ink-muted);
+}
+
+.date-selector-time-input {
+  width: 100%;
+  box-sizing: border-box;
+
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+
+  padding: 8px 10px;
+
+  background: var(--color-surface);
+  color: var(--color-ink);
+
+  font-size: 13px;
+  outline: none;
+}
+
+.date-selector-time-input:hover {
+  border-color: var(--color-primary-300);
+}
+
+.date-selector-time-input:focus {
+  border-color: var(--color-primary-500);
+}
+
+.date-selector-time-hint {
+  margin-top: 6px;
+
+  font-size: 11px;
+  line-height: 1.4;
+
+  color: var(--color-ink-faint);
+}

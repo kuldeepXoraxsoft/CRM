@@ -33,6 +33,16 @@ export const listAccounts = asyncHandler(async (req, res) => {
   res.json(accounts);
 });
 
+export const countAccounts = asyncHandler(async (req, res) => {
+  const where = await buildLeadAccountScopeWhere(req.user);
+
+  const count = await prisma.account.count({
+    where,
+  });
+
+  res.json({ count });
+});
+
 export const getAccount = asyncHandler(async (req, res) => {
   const scope = await buildLeadAccountScopeWhere(req.user);
 

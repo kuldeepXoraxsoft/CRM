@@ -5,17 +5,17 @@ export default function NotificationDropdown({
   unreadCount,
   onRead,
   onDelete,
-  onViewAll,
+  // onViewAll,
   onClose,
 }) {
   const latestNotifications = notifications.slice(0, 5);
 
   return (
-    <div className="absolute right-0 top-12 z-50 w-[390px] overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
+    <div className="absolute right-[-35px] top-10 z-50 w-[350px] overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
 
       {/* Header */}
 
-      <div className="flex items-center justify-between border-b border-border px-5 py-4">
+      <div className="flex items-center justify-between border-b border-border px-5 py-2 bg-primary-100">
         <div>
           <h3 className="text-base font-semibold text-ink">
             Notifications
@@ -60,7 +60,7 @@ export default function NotificationDropdown({
             <div
               key={notification.id}
               className={`group border-b border-border p-4 transition-colors hover:bg-canvas ${
-                !notification.read ? "bg-primary-50/40" : ""
+                !notification.isRead ? "bg-primary-50/40" : ""
               }`}
             >
               <div className="flex justify-between gap-3">
@@ -71,7 +71,7 @@ export default function NotificationDropdown({
 
                   <div className="flex items-center gap-2">
 
-                    {!notification.read && (
+                    {!notification.isRead && (
                       <span className="h-2 w-2 rounded-full bg-primary-500" />
                     )}
 
@@ -95,7 +95,7 @@ export default function NotificationDropdown({
 
                 <div className="flex flex-col gap-2 opacity-0 transition-opacity group-hover:opacity-100">
 
-                  {!notification.read && (
+                  {!notification.isRead && (
                     <button
                       onClick={() => onRead(notification.id)}
                       className="rounded p-1 text-success-500 hover:bg-success-50"
@@ -124,7 +124,7 @@ export default function NotificationDropdown({
 
       {/* Footer */}
 
-      <div className="border-t border-border bg-canvas px-5 py-3">
+      {/* <div className="border-t border-border bg-canvas px-5 py-3">
 
         <button
           onClick={onViewAll}
@@ -133,7 +133,7 @@ export default function NotificationDropdown({
           View All Notifications
         </button>
 
-      </div>
+      </div> */}
     </div>
   );
 }

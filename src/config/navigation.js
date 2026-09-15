@@ -1,44 +1,79 @@
 import {
     LayoutDashboard,
-    Users,
+    Building2,
     UserPlus,
-    Briefcase,
-    CheckSquare,
+    UserRound,
+    UsersRound,
+    ClipboardCheck,
     Settings,
+    ShieldCheck,
 } from "lucide-react";
 
-export const NAV_ITEMS = [
+export const getNavItems = (role) => {
+    // Super Admin has a completely separate navigation
+    if (role === "superAdmin") {
+        return [
+            {
+                label: "Management",
+                to: "/management",
+                icon: ShieldCheck,
+            },
+            {
+                label: "Settings",
+                to: "/settings",
+                icon: Settings,
+            },
+        ];
+    }
 
-    {
-        label: "Dashboard",
-        to: "/dashboard",
-        icon: LayoutDashboard,
-        end: true,
-    },
+    // Admin / Manager / Employee navigation
+    const items = [
+        {
+            label: "Dashboard",
+            to: "/dashboard",
+            icon: LayoutDashboard,
+            end: true,
+        },
+        {
+            label: "Account",
+            to: "/accounts",
+            icon: Building2,
+        },
+        {
+            label: "Leads",
+            to: "/leads",
+            icon: UserPlus,
+        },
+    ];
 
-    {
-        label: "Account",
-        to: "/accounts",
-        icon: Users,
-    },
+    // Only Admin and Manager can see Employees and Teams
+    if (role === "admin" || role === "manager") {
+        items.push(
+            {
+                label: "Employees",
+                to: "/employees",
+                icon: UserRound,
+            },
+            {
+                label: "Teams",
+                to: "/teams",
+                icon: UsersRound,
+            }
+        );
+    }
 
-    {
-        label: "Leads",
-        to: "/leads",
-        icon: UserPlus,
-    },
+    items.push(
+        {
+            label: "Tasks",
+            to: "/tasks",
+            icon: ClipboardCheck,
+        },
+        {
+            label: "Settings",
+            to: "/settings",
+            icon: Settings,
+        }
+    );
 
-   
-
-    {
-        label: "Tasks",
-        to: "/tasks",
-        icon: CheckSquare,
-    },
-
-    {
-        label: "Settings",
-        to: "/settings",
-        icon: Settings,
-    },
-];
+    return items;
+};

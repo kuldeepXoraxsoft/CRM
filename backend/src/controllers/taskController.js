@@ -3,6 +3,8 @@ import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { logActivity } from "../utils/activityLogger.js";
 import { notifyTaskStakeholders } from "../helpers/taskNotificationHelper.js";
+import { buildTaskScopeWhere } from "../utils/scope.js";
+
 const TASK_INCLUDE = {
   assignee: {
     select: {
@@ -35,41 +37,97 @@ const TASK_INCLUDE = {
   },
 };
 
+const getScopedTask = async (taskId, currentUser) => {
+  const scopeWhere = await buildTaskScopeWhere(currentUser);
+
+  return prisma.assignedTask.findFirst({
+    where: {
+      id: taskId,
+      ...scopeWhere,
+    },
+    include: TASK_INCLUDE,
+  });
+};
+
 export const listAssignedTasks = asyncHandler(async (req, res) => {
-  const { role, id } = req.user;
-
-  let where = { assigneeId: id };
-
-  if (role === "admin") {
-    where = {};
-  } else if (role === "manager") {
-    const employees = await prisma.user.findMany({
-      where: { managerId: id },
-      select: { id: true },
-    });
-    where = { assigneeId: { in: [id, ...employees.map((e) => e.id)] } };
-  }
+  const where = await buildTaskScopeWhere(req.user);
 
   const tasks = await prisma.assignedTask.findMany({
     where,
     include: TASK_INCLUDE,
-    orderBy: { createdAt: "desc" },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
   res.json(tasks);
 });
 
-// Gated by authorize("ASSIGN_TASK") in the route - manager/admin only.
 export const createAssignedTask = asyncHandler(async (req, res) => {
-  const { title, managerNotes, priority, dueDate, assigneeId } = req.body;
+  const {
+    title,
+    managerNotes,
+    priority,
+    dueDate,
+    assigneeId,
+  } = req.body;
 
-  if (!title?.trim()) throw new ApiError(400, "Title is required.");
-  if (!assigneeId) throw new ApiError(400, "Please pick who to assign this to.");
+  if (!title?.trim()) {
+    throw new ApiError(400, "Title is required.");
+  }
+
+  if (!assigneeId) {
+    throw new ApiError(
+      400,
+      "Please pick who to assign this to."
+    );
+  }
+
+  const assignee = await prisma.user.findUnique({
+    where: {
+      id: assigneeId,
+    },
+    select: {
+      id: true,
+      name: true,
+      role: true,
+      departmentId: true,
+      managerId: true,
+    },
+  });
+
+  if (!assignee) {
+    throw new ApiError(404, "Assignee not found.");
+  }
+
+  if (
+    req.user.role !== "superAdmin" &&
+    assignee.departmentId !== req.user.departmentId
+  ) {
+    throw new ApiError(
+      403,
+      "You cannot assign a task to a user from another department."
+    );
+  }
+
+  if (req.user.role === "manager") {
+    const isSelf = assignee.id === req.user.id;
+
+    const isDirectEmployee =
+      assignee.managerId === req.user.id;
+
+    if (!isSelf && !isDirectEmployee) {
+      throw new ApiError(
+        403,
+        "You can only assign tasks to yourself or your direct employees."
+      );
+    }
+  }
 
   const task = await prisma.assignedTask.create({
     data: {
-      title,
-      managerNotes,
+      title: title.trim(),
+      managerNotes: managerNotes?.trim() || null,
       priority: priority || "Medium",
       dueDate: dueDate ? new Date(dueDate) : null,
       assigneeId,
@@ -81,7 +139,8 @@ export const createAssignedTask = asyncHandler(async (req, res) => {
   await logActivity(
     req.user.id,
     `${req.user.name} assigned "${task.title}" to ${task.assignee.name}`,
-    "task"
+    "task",
+    req.user.departmentId,
   );
 
   await notifyTaskStakeholders({
@@ -98,25 +157,40 @@ export const createAssignedTask = asyncHandler(async (req, res) => {
 export const updateTaskStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
 
-  const existing = await prisma.assignedTask.findUnique({ where: { id: req.params.id } });
-  if (!existing) throw new ApiError(404, "Task not found.");
+  if (!status) {
+    throw new ApiError(400, "Status is required.");
+  }
 
-  if (req.user.role === "employee" && existing.assigneeId !== req.user.id) {
-    throw new ApiError(403, "You can only update tasks assigned to you.");
+  const existing = await getScopedTask(
+    req.params.id,
+    req.user
+  );
+
+  if (!existing) {
+    throw new ApiError(404, "Task not found.");
+  }
+
+  if (
+    req.user.role === "employee" &&
+    existing.assigneeId !== req.user.id
+  ) {
+    throw new ApiError(
+      403,
+      "You can only update tasks assigned to you."
+    );
   }
 
   const task = await prisma.assignedTask.update({
-    where: { id: req.params.id },
-    data: { status: status ?? existing.status },
+    where: {
+      id: req.params.id,
+    },
+    data: {
+      status,
+    },
     include: TASK_INCLUDE,
   });
 
-  // Let the manager who assigned it know it moved - and use a distinct
-  // notification type when it's specifically marked Completed.
-  if (
-    status &&
-    status !== existing.status
-  ) {
+  if (status !== existing.status) {
     await notifyTaskStakeholders({
       task,
       actor: req.user,
@@ -138,24 +212,84 @@ export const updateTaskStatus = asyncHandler(async (req, res) => {
   res.json(task);
 });
 
-// Gated by authorize("REASSIGN_TASK") in the route - manager/admin only.
 export const reassignTask = asyncHandler(async (req, res) => {
   const { assigneeId } = req.body;
-  if (!assigneeId) throw new ApiError(400, "Pick who to reassign this to.");
 
-  const existing = await prisma.assignedTask.findUnique({ where: { id: req.params.id } });
-  if (!existing) throw new ApiError(404, "Task not found.");
+  if (!assigneeId) {
+    throw new ApiError(
+      400,
+      "Pick who to reassign this to."
+    );
+  }
+
+  const existing = await getScopedTask(
+    req.params.id,
+    req.user
+  );
+
+  if (!existing) {
+    throw new ApiError(404, "Task not found.");
+  }
+
+  const newAssignee = await prisma.user.findUnique({
+    where: {
+      id: assigneeId,
+    },
+    select: {
+      id: true,
+      name: true,
+      role: true,
+      departmentId: true,
+      managerId: true,
+    },
+  });
+
+  if (!newAssignee) {
+    throw new ApiError(
+      404,
+      "New assignee not found."
+    );
+  }
+
+  if (
+    req.user.role !== "superAdmin" &&
+    newAssignee.departmentId !== req.user.departmentId
+  ) {
+    throw new ApiError(
+      403,
+      "You cannot reassign a task to another department."
+    );
+  }
+
+  if (req.user.role === "manager") {
+    const isSelf = newAssignee.id === req.user.id;
+
+    const isDirectEmployee =
+      newAssignee.managerId === req.user.id;
+
+    if (!isSelf && !isDirectEmployee) {
+      throw new ApiError(
+        403,
+        "You can only reassign tasks to yourself or your direct employees."
+      );
+    }
+  }
 
   const task = await prisma.assignedTask.update({
-    where: { id: req.params.id },
-    data: { assigneeId },
+    where: {
+      id: req.params.id,
+    },
+    data: {
+      assigneeId,
+    },
     include: TASK_INCLUDE,
   });
 
   await logActivity(
     req.user.id,
     `${req.user.name} reassigned "${task.title}" to ${task.assignee.name}`,
-    "task"
+    "task",
+    req.user.departmentId,
   );
 
   await notifyTaskStakeholders({
@@ -171,43 +305,74 @@ export const reassignTask = asyncHandler(async (req, res) => {
 
 export const addTaskComment = asyncHandler(async (req, res) => {
   const { text } = req.body;
-  if (!text?.trim()) throw new ApiError(400, "Comment text is required.");
 
-  const existing = await prisma.assignedTask.findUnique({ where: { id: req.params.id } });
-  if (!existing) throw new ApiError(404, "Task not found.");
+  if (!text?.trim()) {
+    throw new ApiError(
+      400,
+      "Comment text is required."
+    );
+  }
+
+  const existing = await getScopedTask(
+    req.params.id,
+    req.user
+  );
+
+  if (!existing) {
+    throw new ApiError(404, "Task not found.");
+  }
 
   await prisma.taskComment.create({
-    data: { text: text.trim(), taskId: req.params.id, authorId: req.user.id },
+    data: {
+      text: text.trim(),
+      taskId: req.params.id,
+      authorId: req.user.id,
+    },
   });
 
   const task = await prisma.assignedTask.findUnique({
-    where: { id: req.params.id },
+    where: {
+      id: req.params.id,
+    },
     include: TASK_INCLUDE,
   });
 
-  // Notify whichever side of the assignment DIDN'T write the comment.
   const recipientId =
-    req.user.id === task.assigneeId ? task.assignedById : task.assigneeId;
+    req.user.id === task.assigneeId
+      ? task.assignedById
+      : task.assigneeId;
 
-  if (recipientId && recipientId !== req.user.id) {
-    await notify({
-      userId: recipientId,
+  if (
+    recipientId &&
+    recipientId !== req.user.id
+  ) {
+    await notifyTaskStakeholders({
+      task,
+      actor: req.user,
       type: "COMMENT",
       title: "New update on a task",
       message: `${req.user.name} commented on "${task.title}"`,
-      entityType: "task",
-      entityId: task.id,
     });
   }
 
   res.status(201).json(task);
 });
 
-// Gated by authorize("ASSIGN_TASK") in the route - manager/admin only.
 export const deleteAssignedTask = asyncHandler(async (req, res) => {
-  const existing = await prisma.assignedTask.findUnique({ where: { id: req.params.id } });
-  if (!existing) throw new ApiError(404, "Task not found.");
+  const existing = await getScopedTask(
+    req.params.id,
+    req.user
+  );
 
-  await prisma.assignedTask.delete({ where: { id: req.params.id } });
+  if (!existing) {
+    throw new ApiError(404, "Task not found.");
+  }
+
+  await prisma.assignedTask.delete({
+    where: {
+      id: req.params.id,
+    },
+  });
+
   res.status(204).send();
 });

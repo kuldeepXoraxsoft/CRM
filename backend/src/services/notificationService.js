@@ -16,12 +16,12 @@ import prisma from "../config/db.js";
  *     entityId: task.id,
  *   });
  */
-export async function notify({ userId, type, title, message, entityType, entityId }) {
+export async function notify({ userId, type, title, message, entityType, entityId, reminderKey }) {
   if (!userId) return null;
 
   try {
     return await prisma.notification.create({
-      data: { userId, type, title, message, entityType, entityId },
+      data: { userId, type, title, message, entityType, entityId, reminderKey },
     });
   } catch (err) {
     console.error("Failed to create notification:", err.message);
@@ -33,7 +33,7 @@ export async function notify({ userId, type, title, message, entityType, entityI
  * Same as notify(), but for a list of userIds at once (e.g. notifying
  * every member of a team). Uses createMany for a single DB round trip.
  */
-export async function notifyMany({ userIds, type, title, message, entityType, entityId }) {
+export async function notifyMany({ userIds, type, title, message, entityType, entityId, reminderKey }) {
   const uniqueIds = [...new Set(userIds)].filter(Boolean);
   if (uniqueIds.length === 0) return;
 
@@ -46,6 +46,7 @@ export async function notifyMany({ userIds, type, title, message, entityType, en
         message,
         entityType,
         entityId,
+        reminderKey,
       })),
     });
   } catch (err) {
