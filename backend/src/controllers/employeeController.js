@@ -54,7 +54,6 @@ export const createEmployee = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid role.");
   }
 
-  // A manager can only create Employees, and only directly under themself.
   let finalRole = role || "employee";
   let finalManagerId = managerId || null;
 

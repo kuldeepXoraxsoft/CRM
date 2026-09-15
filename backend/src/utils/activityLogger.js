@@ -1,8 +1,6 @@
 import prisma from "../config/db.js";
 
-export async function logActivity( actorId, message, type = "general", departmentId = null 
-  
-) {
+export async function logActivity( actorId, message, type = "general", departmentId = null ) {
   try {
     await prisma.activity.create({
       data: {

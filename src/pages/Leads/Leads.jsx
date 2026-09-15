@@ -286,7 +286,7 @@ export default function Leads() {
       </div>
 
       <section className="rounded-lg border border-border bg-surface">
-        <div className="border-b border-border px-5 py-3.5">
+        {/* <div className="border-b border-border px-5 py-3.5">
           <DateSelector
             mode="range"
             label="Filter by Date Added"
@@ -294,7 +294,7 @@ export default function Leads() {
             onChange={setDateAddedFilter}
             placeholder="All dates"
           />
-        </div>
+        </div> */}
 
         <div className="p-4">
           <DataTable
