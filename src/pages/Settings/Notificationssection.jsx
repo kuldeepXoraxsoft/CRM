@@ -1,5 +1,5 @@
 import Toggle from "../../components/ui/Toggle";
-import { NOTIFICATION_PREFERENCES } from "../../data/SettingsData";
+import { NOTIFICATION_PREFERENCES } from "../../data/Settingsdata";
 
 export default function NotificationsSection({ notifications, onChange }) {
   return (

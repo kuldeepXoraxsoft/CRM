@@ -7,7 +7,7 @@ import {
   ROUTE_TYPE_OPTIONS,
   CONTENT_TYPE_OPTIONS,
   ROUTE_STATUS_OPTIONS,
-} from "../../data/routeData";
+} from "../../data/Routedata";
 
 export default function RouteModal({ isOpen, onClose, mode, route, onSave }) {
   const [form, setForm] = useState(createEmptyRoute());

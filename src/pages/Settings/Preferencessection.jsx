@@ -1,5 +1,5 @@
 import { Select } from "../../components/ui";
-import { THEME_OPTIONS, DENSITY_OPTIONS, LANDING_PAGE_OPTIONS } from "../../data/SettingsData";
+import { THEME_OPTIONS, DENSITY_OPTIONS, LANDING_PAGE_OPTIONS } from "../../data/Settingsdata";
 
 export default function PreferencesSection({ preferences, onChange }) {
   return (

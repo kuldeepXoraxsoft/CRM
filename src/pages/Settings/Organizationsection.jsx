@@ -1,5 +1,5 @@
 import { Input, Select } from "../../components/ui";
-import { CURRENCY_OPTIONS } from "../../data/SettingsData";
+import { CURRENCY_OPTIONS } from "../../data/Settingsdata";
 
 export default function OrganizationSection({ organization, onChange }) {
   return (
