@@ -22,12 +22,12 @@ import {
   LEAD_TABLE_COLUMNS,
   LEAD_STATUS_VARIANT,
   CONVERTIBLE_STATUSES,
-} from "../../data/leadData";
+} from "../../data/Leaddata";
 
-import { leadsApi } from "../../api/leadsApi";
+import { leadsApi } from "../../api/Leadsapi";
 import { toDateInputValue } from "../../utils/formateDate";
 
-import "./leads.css";
+import "./Leads.css";
 
 export default function Leads() {
   const [leads, setLeads] = useState([]);

@@ -5,11 +5,11 @@ import { Button } from "../../components/ui";
 import Tabs from "../../components/ui/Tabs";
 
 import ProfileSection from "./ProfileSection";
-import PreferencesSection from "./PreferencesSection";
-import NotificationsSection from "./NotificationsSection";
-import OrganizationSection from "./OrganizationSection";
+import PreferencesSection from "./Preferencessection";
+import NotificationsSection from "./Notificationssection";
+import OrganizationSection from "./Organizationsection";
 
-import { SAMPLE_SETTINGS } from "../../data/SettingsData";
+import { SAMPLE_SETTINGS } from "../../data/Settingsdata";
 import { useAuth } from "../../context/AuthContext";
 
 import "./settings.css";

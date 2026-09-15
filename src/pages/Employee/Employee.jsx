@@ -11,7 +11,7 @@ import { useTeams } from "../../hooks/useTeams";
 import { useAuth } from "../../context/AuthContext";
 import { useActivity } from "../../hooks/useActivity";
 
-import { EMPLOYEE_TABLE_COLUMNS } from "../../data/employeeData";
+import { EMPLOYEE_TABLE_COLUMNS } from "../../data/Employeedata";
 import { ROLE_LABELS, ROLE_BADGE_VARIANT } from "../../utils/roles";
 
 export default function Employees() {
