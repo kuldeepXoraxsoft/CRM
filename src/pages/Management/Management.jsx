@@ -18,7 +18,6 @@ import AdminModal from "./Adminmodal/AdminModal";
 import managementApi from "../../api/Managementapi";
 import { useToast } from "../../context/toastContext";
 
-import "./Management.css";
 
 export default function Management() {
   const { success, error } = useToast();
