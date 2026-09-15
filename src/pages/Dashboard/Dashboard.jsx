@@ -17,15 +17,15 @@ import {
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 import StatCard from "./Statcard";
-import RecentActivityWidget from "./RecentActivityWidget";
+import RecentActivityWidget from "./Recentactivitywidget";
 
 import TaskModal from "../Tasks/TaskModal";
 import AssignedTaskModal from "../Tasks/AssignedTaskModal";
 import AssignTaskModal from "../Tasks/AssignTaskModal";
 
-import { todosApi } from "../../api/todosApi";
-import { tasksApi } from "../../api/tasksApi";
-import { accountsApi } from "../../api/accountsApi";
+import { todosApi } from "../../api/Todosapi";
+import { tasksApi } from "../../api/Tasksapi";
+import { accountsApi } from "../../api/Accountsapi";
 
 import { useAuth } from "../../context/AuthContext";
 import { useEmployees } from "../../hooks/useEmployees";

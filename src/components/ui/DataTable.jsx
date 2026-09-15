@@ -3,7 +3,7 @@ import { Search, Inbox, X } from "lucide-react";
 
 import Pagination from "./Pagination";
 
-import "./dataTable.css";
+import "./datatable.css";
 
 /**
  * Generic reusable table component.
