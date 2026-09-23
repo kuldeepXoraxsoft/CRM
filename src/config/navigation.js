@@ -5,8 +5,10 @@ import {
     UserRound,
     UsersRound,
     ClipboardCheck,
+    CalendarCheck,
     Settings,
     ShieldCheck,
+    Network,
 } from "lucide-react";
 
 export const getNavItems = (role) => {
@@ -44,6 +46,16 @@ export const getNavItems = (role) => {
             to: "/leads",
             icon: UserPlus,
         },
+        // {
+        //    label: "Routes",
+        //    to: "/routes",
+        //    icon: Network,
+        // },
+        // {
+        //     label: "Meetings",
+        //     to: "meetings",
+        //     icon: CalendarCheck,
+        // }
     ];
 
     // Only Admin and Manager can see Employees and Teams

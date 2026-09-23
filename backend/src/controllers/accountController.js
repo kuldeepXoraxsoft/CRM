@@ -19,18 +19,74 @@ const ACCOUNT_INCLUDE = {
   },
 };
 
+import { getPagination } from "../utils/pagination.js";
+
 export const listAccounts = asyncHandler(async (req, res) => {
   const where = await buildLeadAccountScopeWhere(req.user);
 
-  const accounts = await prisma.account.findMany({
-    where,
-    include: ACCOUNT_INCLUDE,
-    orderBy: {
-      createdAt: "desc",
+  const { page, limit, skip } = getPagination(req);
+
+  const search = req.query.search?.trim();
+
+  if (search) {
+    where.OR = [
+      {
+        customerName: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+      {
+        clientAM: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+      {
+        cyvoraAM: {
+          name: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      },
+    ];
+  }
+
+  const [accounts, total] = await prisma.$transaction([
+    prisma.account.findMany({
+      where,
+      include: ACCOUNT_INCLUDE,
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+        {
+          id: "desc",
+        },
+      ],
+      skip,
+      take: limit,
+    }),
+
+    prisma.account.count({
+      where,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+
+  res.json({
+    data: accounts,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
     },
   });
-
-  res.json(accounts);
 });
 
 export const countAccounts = asyncHandler(async (req, res) => {
@@ -66,8 +122,6 @@ export const createAccount = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Customer Name is required.");
   }
 
-  // Department is assigned from authenticated backend user.
-  // Never trust departmentId from frontend.
   if (req.user.role !== "superAdmin" && !req.user.departmentId) {
     throw new ApiError(
       400,
@@ -174,7 +228,7 @@ export const updateAccountFollowUp = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Account not found.");
   }
 
-  const parsedDate = new Date(followUpDate);   // ✅ fixed
+  const parsedDate = new Date(followUpDate);  
 
   if (Number.isNaN(parsedDate.getTime())) {
     throw new ApiError(400, "Invalid follow-up date.");

@@ -5,6 +5,7 @@ import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { logActivity } from "../utils/activityLogger.js";
 import { ROLES } from "../constants/allowedValues.js";
+import { getPagination } from "../utils/pagination.js";
 
 const SAFE_SELECT = {
   id: true,
@@ -16,8 +17,20 @@ const SAFE_SELECT = {
   managerId: true,
   teamId: true,
   joinedDate: true,
-  manager: { select: { id: true, name: true } },
-  team: { select: { id: true, name: true } },
+
+  manager: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+
+  team: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
 };
 
 export const listEmployees = asyncHandler(async (req, res) => {
@@ -25,29 +38,96 @@ export const listEmployees = asyncHandler(async (req, res) => {
 
   let where = {};
 
-  if (role === "admin") {
- where = { departmentId: departmentId, };
-  } 
-  else if (role === "manager") { where = { OR: [ { managerId: id }, { id }, ], };
-  } 
-  else if (role === "employee") { where = { id, }; }
 
-  const employees = await prisma.user.findMany({
-    where,
-    select: SAFE_SELECT,
-    orderBy: {
-      createdAt: "desc",
+  if (role === "admin") { where = { departmentId, }; } 
+  else if (role === "manager") {
+    where = { OR: [ { managerId: id, }, { id, }, ], }; } 
+    else if (role === "employee") { where = { id, }; }
+
+  const { page, limit, skip } = getPagination(req);
+  const search = req.query.search?.trim();
+
+  if (search) {
+    where.AND = [
+      {
+        OR: [
+          {
+            name: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+          {
+            email: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+          {
+            team: {
+              name: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+          },
+        ],
+      },
+    ];
+  }
+
+  const [employees, total] = await prisma.$transaction([
+    prisma.user.findMany({
+      where,
+      select: SAFE_SELECT,
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+        {
+          id: "desc",
+        },
+      ],
+
+      skip,
+      take: limit,
+    }),
+
+    prisma.user.count({
+      where,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+  res.json({
+    data: employees,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
     },
   });
-
-  res.json(employees);
 });
 
 export const createEmployee = asyncHandler(async (req, res) => {
-  const { name, email, password, role, managerId, teamId, status } = req.body;
+  const {
+    name,
+    email,
+    password,
+    role,
+    managerId,
+    teamId,
+    status,
+  } = req.body;
 
   if (!name?.trim() || !email?.trim() || !password) {
-    throw new ApiError(400, "Name, email and password are required.");
+    throw new ApiError(
+      400,
+      "Name, email and password are required."
+    );
   }
 
   if (role && !ROLES.includes(role)) {
@@ -57,6 +137,7 @@ export const createEmployee = asyncHandler(async (req, res) => {
   let finalRole = role || "employee";
   let finalManagerId = managerId || null;
 
+  // Manager can only create employees under himself.
   if (req.user.role === "manager") {
     finalRole = "employee";
     finalManagerId = req.user.id;
@@ -75,6 +156,7 @@ export const createEmployee = asyncHandler(async (req, res) => {
       teamId: teamId || null,
       status: status || "Active",
     },
+
     select: SAFE_SELECT,
   });
 
@@ -89,10 +171,23 @@ export const createEmployee = asyncHandler(async (req, res) => {
 
 export const updateEmployee = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { name, email, role, managerId, teamId, status } = req.body;
 
-  const existing = await prisma.user.findUnique({ where: { id } });
-  if (!existing) throw new ApiError(404, "Employee not found.");
+  const {
+    name,
+    email,
+    role,
+    managerId,
+    teamId,
+    status,
+  } = req.body;
+
+  const existing = await prisma.user.findUnique({
+    where: { id },
+  });
+
+  if (!existing) {
+    throw new ApiError(404, "Employee not found.");
+  }
 
   const data = {
     name: name ?? existing.name,
@@ -102,19 +197,28 @@ export const updateEmployee = asyncHandler(async (req, res) => {
     status: status ?? existing.status,
   };
 
-  // Only an admin can change someone's role.
+  // Only admin can change someone's role.
   if (req.user.role === "admin" && role) {
-    if (!ROLES.includes(role)) throw new ApiError(400, "Invalid role.");
+    if (!ROLES.includes(role)) {
+      throw new ApiError(400, "Invalid role.");
+    }
+
     data.role = role;
   }
 
   const updated = await prisma.user.update({
     where: { id },
+
     data,
+
     select: SAFE_SELECT,
   });
 
-  await logActivity(req.user.id, `${req.user.name} updated ${updated.name}`, "employee");
+  await logActivity(
+    req.user.id,
+    `${req.user.name} updated ${updated.name}`,
+    "employee"
+  );
 
   res.json(updated);
 });
@@ -122,12 +226,23 @@ export const updateEmployee = asyncHandler(async (req, res) => {
 export const deleteEmployee = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const existing = await prisma.user.findUnique({ where: { id } });
-  if (!existing) throw new ApiError(404, "Employee not found.");
+  const existing = await prisma.user.findUnique({
+    where: { id },
+  });
 
-  await prisma.user.delete({ where: { id } });
+  if (!existing) {
+    throw new ApiError(404, "Employee not found.");
+  }
 
-  await logActivity(req.user.id, `${req.user.name} removed ${existing.name}`, "employee");
+  await prisma.user.delete({
+    where: { id },
+  });
+
+  await logActivity(
+    req.user.id,
+    `${req.user.name} removed ${existing.name}`,
+    "employee"
+  );
 
   res.status(204).send();
 });

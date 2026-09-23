@@ -1,95 +1,182 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Inbox, X } from "lucide-react";
 
 import Pagination from "./Pagination";
 
 import "./datatable.css";
 
-/**
- * Generic reusable table component.
- *
- * Usage:
- * <DataTable
- *   columns={[
- *     { key: "customerName", label: "Customer Name" },
- *     { key: "status", label: "Status", render: (row) => <StatusBadge status={row.status} /> },
- *   ]}
- *   data={leads}
- *   keyField="id"
- *   searchable
- *   searchPlaceholder="Search leads..."
- *   pageSize={10}
- *   onRowClick={(row) => openLead(row)}
- *   renderActions={(row) => (
- *     <>
- *       <button onClick={() => onEdit(row)}>Edit</button>
- *       <button onClick={() => onDelete(row.id)}>Delete</button>
- *     </>
- *   )}
- *   emptyTitle="No Leads"
- *   emptyMessage='Click "Add Lead" to create your first lead.'
- * />
- */
 export default function DataTable({
   columns,
   data,
   keyField = "id",
+
   searchable = false,
   searchPlaceholder = "Search...",
+
   pageSize: initialPageSize = 10,
   pageSizeOptions = [10, 25, 50, 100],
   showPageSizeSelector = true,
+
   onRowClick,
   renderActions,
+
   emptyTitle = "No Data",
   emptyMessage = "There is nothing to show here yet.",
-  bodyHeight, // e.g. "60vh", "420px", "100%" - table rows become a fixed-height
+
+  bodyHeight,
+
+  // Server-side mode
+  serverPagination = false,
+  totalItems = 0,
+  currentPage: externalPage,
+  onPageChange: externalOnPageChange,
+  onSearchChange: externalOnSearchChange,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
 
+  const currentPage =
+    serverPagination && externalPage !== undefined
+      ? externalPage
+      : internalPage;
+
+  /*
+   * CLIENT-SIDE SEARCH
+   *
+   * Only used when serverPagination=false.
+   */
   const filteredData = useMemo(() => {
-    if (!searchable || !searchTerm.trim()) return data;
+    if (serverPagination) return data;
+
+    if (!searchable || !searchTerm.trim()) {
+      return data;
+    }
 
     const term = searchTerm.trim().toLowerCase();
 
     return data.filter((row) =>
       columns.some((col) => {
         const value = row[col.key];
-        if (value === null || value === undefined) return false;
-        return String(value).toLowerCase().includes(term);
+
+        if (value === null || value === undefined) {
+          return false;
+        }
+
+        return String(value)
+          .toLowerCase()
+          .includes(term);
       })
     );
-  }, [data, columns, searchTerm, searchable]);
+  }, [
+    data,
+    columns,
+    searchTerm,
+    searchable,
+    serverPagination,
+  ]);
 
+  /*
+   * TOTAL ITEMS
+   */
+  const itemCount = serverPagination
+    ? totalItems
+    : filteredData.length;
+
+  /*
+   * TOTAL PAGES
+   */
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredData.length / pageSize)
+    Math.ceil(itemCount / pageSize)
   );
 
-  const safePage = Math.min(currentPage, totalPages);
+  /*
+   * Make sure current page is valid.
+   */
+  const safePage = Math.min(
+    Math.max(currentPage, 1),
+    totalPages
+  );
 
+  /*
+   * CLIENT-SIDE PAGINATION
+   *
+   * Server mode receives already-paginated data,
+   * so don't slice it again.
+   */
   const paginatedData = useMemo(() => {
+    if (serverPagination) {
+      return data;
+    }
+
     const start = (safePage - 1) * pageSize;
-    return filteredData.slice(start, start + pageSize);
-  }, [filteredData, safePage, pageSize]);
+
+    return filteredData.slice(
+      start,
+      start + pageSize
+    );
+  }, [
+    serverPagination,
+    data,
+    filteredData,
+    safePage,
+    pageSize,
+  ]);
+
+  /*
+   * Reset page when normal client-side
+   * filtering changes.
+   */
+  useEffect(() => {
+    if (!serverPagination) {
+      setInternalPage(1);
+    }
+  }, [searchTerm, serverPagination]);
 
   function handleSearchChange(e) {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
+    const value = e.target.value;
+
+    setSearchTerm(value);
+
+    if (serverPagination) {
+      externalOnSearchChange?.(value);
+    } else {
+      setInternalPage(1);
+    }
+  }
+
+  function handlePageChange(page) {
+    if (serverPagination) {
+      externalOnPageChange?.(page);
+    } else {
+      setInternalPage(page);
+    }
   }
 
   function handlePageSizeChange(newSize) {
     setPageSize(newSize);
-    setCurrentPage(1);
+
+    if (serverPagination) {
+      externalOnPageChange?.(1);
+    } else {
+      setInternalPage(1);
+    }
   }
+
+  const displayData = serverPagination
+    ? data
+    : paginatedData;
 
   return (
     <div className="data-table-wrapper">
+
       {searchable && (
         <div className="data-table-search">
-          <Search size={16} className="data-table-search-icon" />
+          <Search
+            size={16}
+            className="data-table-search-icon"
+          />
 
           <input
             type="text"
@@ -105,7 +192,12 @@ export default function DataTable({
               className="data-table-search-clear"
               onClick={() => {
                 setSearchTerm("");
-                setCurrentPage(1);
+
+                if (serverPagination) {
+                  externalOnSearchChange?.("");
+                } else {
+                  setInternalPage(1);
+                }
               }}
               aria-label="Clear search"
             >
@@ -117,7 +209,14 @@ export default function DataTable({
 
       <div
         className="data-table-scroll"
-        style={bodyHeight ? { height: bodyHeight, overflowY: "auto" } : undefined}
+        style={
+          bodyHeight
+            ? {
+                height: bodyHeight,
+                overflowY: "auto",
+              }
+            : undefined
+        }
       >
         <table className="data-table">
           <thead>
@@ -125,46 +224,75 @@ export default function DataTable({
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  style={col.width ? { width: col.width } : undefined}
+                  style={
+                    col.width
+                      ? { width: col.width }
+                      : undefined
+                  }
                 >
                   {col.label}
                 </th>
               ))}
-              {renderActions && <th className="data-table-actions-col">Actions</th>}
+
+              {renderActions && (
+                <th className="data-table-actions-col">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
 
           <tbody>
-            {paginatedData.length === 0 ? (
+            {displayData.length === 0 ? (
               <tr>
                 <td
-                  colSpan={columns.length + (renderActions ? 1 : 0)}
+                  colSpan={
+                    columns.length +
+                    (renderActions ? 1 : 0)
+                  }
                   className="data-table-empty-cell"
                 >
                   <div className="data-table-empty-state">
-                    <Inbox size={36} className="text-ink-faint" />
+                    <Inbox
+                      size={36}
+                      className="text-ink-faint"
+                    />
+
                     <h3>{emptyTitle}</h3>
+
                     <p>{emptyMessage}</p>
                   </div>
                 </td>
               </tr>
             ) : (
-              paginatedData.map((row) => (
+              displayData.map((row) => (
                 <tr
                   key={row[keyField]}
-                  className={onRowClick ? "data-table-row-clickable" : ""}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  className={
+                    onRowClick
+                      ? "data-table-row-clickable"
+                      : ""
+                  }
+                  onClick={
+                    onRowClick
+                      ? () => onRowClick(row)
+                      : undefined
+                  }
                 >
                   {columns.map((col) => (
                     <td key={col.key}>
-                      {col.render ? col.render(row) : row[col.key] ?? "-"}
+                      {col.render
+                        ? col.render(row)
+                        : row[col.key] ?? "-"}
                     </td>
                   ))}
 
                   {renderActions && (
                     <td
                       className="data-table-actions-cell"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) =>
+                        e.stopPropagation()
+                      }
                     >
                       {renderActions(row)}
                     </td>
@@ -176,15 +304,19 @@ export default function DataTable({
         </table>
       </div>
 
-      {filteredData.length > 0 && (
+      {itemCount > 0 && (
         <Pagination
           currentPage={safePage}
           totalPages={totalPages}
-          totalItems={filteredData.length}
+          totalItems={itemCount}
           pageSize={pageSize}
-          onPageChange={setCurrentPage}
+          onPageChange={handlePageChange}
           pageSizeOptions={pageSizeOptions}
-          onPageSizeChange={showPageSizeSelector ? handlePageSizeChange : undefined}
+          onPageSizeChange={
+            showPageSizeSelector
+              ? handlePageSizeChange
+              : undefined
+          }
         />
       )}
     </div>

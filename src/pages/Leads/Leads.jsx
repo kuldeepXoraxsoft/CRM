@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Plus,
   UploadCloud,
-  Users,
   ArrowRightCircle,
   Pencil,
   Trash2,
@@ -11,7 +10,6 @@ import {
 
 import { Button, Badge } from "../../components/ui";
 import DataTable from "../../components/ui/DataTable";
-import DateSelector from "../../components/ui/DateSelector";
 import FollowUpModal from "../../components/FollowUpModal";
 import ConfirmDialog from "../../components/ConfirmDialog";
 
@@ -26,12 +24,42 @@ import {
 
 import { leadsApi } from "../../api/Leadsapi";
 import { toDateInputValue } from "../../utils/formateDate";
+import useDebounce from "../../hooks/useDebouce";
 
 import "./Leads.css";
 
 export default function Leads() {
   const [leads, setLeads] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  /* -----------------------------
+      SERVER PAGINATION
+  ----------------------------- */
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  /* -----------------------------
+      SERVER SEARCH
+  ----------------------------- */
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 400);
+
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
+
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  /* -----------------------------
+      MODALS
+  ----------------------------- */
 
   const [isLeadModalOpen, setLeadModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState(null);
@@ -41,14 +69,13 @@ export default function Leads() {
   const [isFollowUpModalOpen, setFollowUpModalOpen] = useState(false);
   const [followUpTarget, setFollowUpTarget] = useState(null);
 
-  const [dateAddedFilter, setDateAddedFilter] = useState({
-    startDate: null,
-    endDate: null,
-  });
+  /* -----------------------------
+      CONFIRM DIALOG
+  ----------------------------- */
 
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
-    type: null, // "delete" | "convert"
+    type: null,
     target: null,
   });
 
@@ -58,55 +85,150 @@ export default function Leads() {
 
   useEffect(() => {
     fetchLeads();
-  }, []);
+  }, [page, pageSize, debouncedSearch, refreshKey]);
 
   async function fetchLeads() {
     setIsLoading(true);
+
     try {
-      const data = await leadsApi.list();
-      setLeads(data);
+      const response = await leadsApi.list({
+        page,
+        limit: pageSize,
+        search: debouncedSearch,
+      });
+
+      setLeads(response?.data || []);
+
+      setPagination(
+        response?.pagination || {
+          page,
+          limit: pageSize,
+          total: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        }
+      );
     } catch (err) {
       console.error("Failed to fetch leads:", err);
+
+      setLeads([]);
     } finally {
       setIsLoading(false);
     }
   }
 
+  function refreshLeads() {
+    setRefreshKey((prev) => prev + 1);
+  }
+
   /* -----------------------------
-      LEAD CRUD FUNCTIONS
+      SEARCH
+  ----------------------------- */
+
+  function handleSearchChange(value) {
+    setSearch(value);
+    setPage(1);
+  }
+
+  /* -----------------------------
+      PAGINATION
+  ----------------------------- */
+
+  function handlePageChange(newPage) {
+    setPage(newPage);
+  }
+
+  function handlePageSizeChange(newSize) {
+    setPageSize(Number(newSize));
+    setPage(1);
+  }
+
+  /* -----------------------------
+      LEAD CRUD
   ----------------------------- */
 
   async function handleCreateLead(lead) {
-    const created = await leadsApi.create(lead);
-    setLeads((prev) => [created, ...prev]);
+    try {
+      await leadsApi.create(lead);
+
+      setPage(1);
+      refreshLeads();
+    } catch (err) {
+      console.error("Failed to create lead:", err);
+      throw err;
+    }
   }
 
   async function handleEditLead(updatedLead) {
-    const saved = await leadsApi.update(updatedLead.id, updatedLead);
-    setLeads((prev) => prev.map((lead) => (lead.id === saved.id ? saved : lead)));
-    setEditingLead(null);
+    try {
+      await leadsApi.update(
+        updatedLead.id,
+        updatedLead
+      );
+
+      setEditingLead(null);
+      setLeadModalOpen(false);
+
+      refreshLeads();
+    } catch (err) {
+      console.error("Failed to update lead:", err);
+      throw err;
+    }
   }
 
   async function handleDeleteLead(id) {
-    await leadsApi.remove(id);
-    setLeads((prev) => prev.filter((lead) => lead.id !== id));
+    try {
+      await leadsApi.remove(id);
+
+      /*
+       * If the deleted lead was the only item
+       * on the current page, move back one page.
+       */
+      if (leads.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      }
+
+      refreshLeads();
+    } catch (err) {
+      console.error("Failed to delete lead:", err);
+      throw err;
+    }
   }
 
   async function handleBulkImport(newLeads) {
-    const { leads: created } = await leadsApi.bulkCreate(newLeads);
-    setLeads((prev) => [...created, ...prev]);
+    try {
+      await leadsApi.bulkCreate(newLeads);
+
+      setPage(1);
+      refreshLeads();
+    } catch (err) {
+      console.error("Failed to bulk import leads:", err);
+      throw err;
+    }
   }
 
   /* -----------------------------
-      LEAD -> ACCOUNT CONVERSION
-      Backend creates the Account and deletes the Lead in one
-      transaction. Visiting /accounts fetches fresh, so the new
-      account will already be there.
+      LEAD -> ACCOUNT
   ----------------------------- */
 
   async function handleConvertToAccount(lead) {
-    await leadsApi.convert(lead.id);
-    setLeads((prev) => prev.filter((item) => item.id !== lead.id));
+    try {
+      await leadsApi.convert(lead.id);
+
+      if (leads.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      }
+
+      refreshLeads();
+    } catch (err) {
+      console.error(
+        "Failed to convert lead to account:",
+        err
+      );
+
+      throw err;
+    }
   }
 
   /* -----------------------------
@@ -114,34 +236,52 @@ export default function Leads() {
   ----------------------------- */
 
   function requestDeleteLead(lead) {
-    setConfirmDialog({ isOpen: true, type: "delete", target: lead });
+    setConfirmDialog({
+      isOpen: true,
+      type: "delete",
+      target: lead,
+    });
   }
 
   function requestConvertToAccount(lead) {
-    setConfirmDialog({ isOpen: true, type: "convert", target: lead });
+    setConfirmDialog({
+      isOpen: true,
+      type: "convert",
+      target: lead,
+    });
   }
 
   function closeConfirmDialog() {
-    setConfirmDialog({ isOpen: false, type: null, target: null });
+    setConfirmDialog({
+      isOpen: false,
+      type: null,
+      target: null,
+    });
   }
 
   async function handleConfirmDialogConfirm() {
     const { type, target } = confirmDialog;
 
-    if (type === "delete") {
-      await handleDeleteLead(target.id);
-    } else if (type === "convert") {
-      await handleConvertToAccount(target);
+    if (!target) {
+      closeConfirmDialog();
+      return;
     }
 
-    closeConfirmDialog();
+    try {
+      if (type === "delete") {
+        await handleDeleteLead(target.id);
+      }
+
+      if (type === "convert") {
+        await handleConvertToAccount(target);
+      }
+    } finally {
+      closeConfirmDialog();
+    }
   }
 
   /* -----------------------------
-      FOLLOW-UP FLOW
-      NOTE: no try/catch here - errors must propagate up to
-      FollowUpModal so it can show the message and decide whether to
-      close itself.
+      FOLLOW-UP
   ----------------------------- */
 
   function openFollowUp(lead) {
@@ -155,6 +295,11 @@ export default function Leads() {
       payload
     );
 
+    /*
+     * Update the current row immediately.
+     * No need to fetch the entire page just for
+     * the follow-up response.
+     */
     setLeads((prev) =>
       prev.map((lead) =>
         lead.id === saved.id ? saved : lead
@@ -165,7 +310,7 @@ export default function Leads() {
   }
 
   /* -----------------------------
-      OPEN MODALS
+      MODAL HELPERS
   ----------------------------- */
 
   function openCreateLead() {
@@ -178,95 +323,107 @@ export default function Leads() {
     setLeadModalOpen(true);
   }
 
-  /* -----------------------------
-      DATE ADDED RANGE FILTER
-  ----------------------------- */
+  function closeLeadModal() {
+    setLeadModalOpen(false);
+    setEditingLead(null);
+  }
 
-  const filteredLeads = useMemo(() => {
-    const { startDate, endDate } = dateAddedFilter;
-    if (!startDate || !endDate) return leads;
-
-    return leads.filter((lead) => {
-      const added = toDateInputValue(lead.dateAdded);
-      if (!added) return false;
-      return added >= startDate && added <= endDate;
-    });
-  }, [leads, dateAddedFilter]);
+  function closeFollowUpModal() {
+    setFollowUpModalOpen(false);
+    setFollowUpTarget(null);
+  }
 
   /* -----------------------------
       TABLE COLUMNS
   ----------------------------- */
 
- const columns = LEAD_TABLE_COLUMNS.map((col) => {
-  if (col.key === "status") {
-    return {
-      ...col,
-      render: (row) => (
-        <Badge variant={LEAD_STATUS_VARIANT[row.status] || "neutral"}>
-          {row.status}
-        </Badge>
-      ),
-    };
-  }
+  const columns = LEAD_TABLE_COLUMNS.map((col) => {
+    if (col.key === "status") {
+      return {
+        ...col,
+        render: (row) => (
+          <Badge
+            variant={
+              LEAD_STATUS_VARIANT[row.status] ||
+              "neutral"
+            }
+          >
+            {row.status}
+          </Badge>
+        ),
+      };
+    }
 
-  if (col.key === "dateAdded") {
-    return {
-      ...col,
-      render: (row) => toDateInputValue(row.dateAdded) || "-",
-    };
-  }
+    if (col.key === "dateAdded") {
+      return {
+        ...col,
+        render: (row) =>
+          toDateInputValue(row.dateAdded) || "-",
+      };
+    }
 
-  if (col.key === "followUpDate") {
-    return {
-      ...col,
-      render: (row) => (
-        <button
-          type="button"
-          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-ink hover:bg-canvas"
-          onClick={(e) => {
-            e.stopPropagation();
-            openFollowUp(row);
-          }}
-        >
-          <span>{toDateInputValue(row.followUpDate) || "Not set"}</span>
-
-          {row.followUpHistory?.length > 0 && (
-            <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-500 px-1 text-[10px] font-bold text-white">
-              {row.followUpHistory.length}
+    if (col.key === "followUpDate") {
+      return {
+        ...col,
+        render: (row) => (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-ink hover:bg-canvas"
+            onClick={(e) => {
+              e.stopPropagation();
+              openFollowUp(row);
+            }}
+          >
+            <span>
+              {toDateInputValue(row.followUpDate) ||
+                "Not set"}
             </span>
-          )}
-        </button>
-      ),
-    };
-  }
 
-  // Department object -> department.name
-  if (col.key === "department") {
-    return {
-      ...col,
-      render: (row) => row.department?.name || "-",
-    };
-  }
+            {row.followUpHistory?.length > 0 && (
+              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-500 px-1 text-[10px] font-bold text-white">
+                {row.followUpHistory.length}
+              </span>
+            )}
+          </button>
+        ),
+      };
+    }
 
-  // Cyvora AM object -> cyvoraAM.name
-  if (col.key === "cyvoraAM") {
-    return {
-      ...col,
-      render: (row) => row.cyvoraAM?.name || "-",
-    };
-  }
+    if (col.key === "department") {
+      return {
+        ...col,
+        render: (row) =>
+          row.department?.name || "-",
+      };
+    }
 
-  return col;
-});
+    if (col.key === "cyvoraAM") {
+      return {
+        ...col,
+        render: (row) =>
+          row.cyvoraAM?.name || "-",
+      };
+    }
+
+    return col;
+  });
+
+  /* -----------------------------
+      RENDER
+  ----------------------------- */
 
   return (
     <div className="leads-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Leads</h1>
+          <h1 className="page-title">
+            Leads
+          </h1>
+
           <p className="page-subtitle">
-            Manage incoming leads, track their progress, and convert them
-            into accounts once the deal is closed.
+            Manage incoming leads, track their
+            progress, and convert them into accounts
+            once the deal is closed.
           </p>
         </div>
 
@@ -274,53 +431,77 @@ export default function Leads() {
           <Button
             variant="outline"
             leftIcon={<UploadCloud size={16} />}
-            onClick={() => setBulkModalOpen(true)}
+            onClick={() =>
+              setBulkModalOpen(true)
+            }
           >
             Bulk Upload
           </Button>
 
-          <Button leftIcon={<Plus size={16} />} onClick={openCreateLead}>
+          <Button
+            leftIcon={<Plus size={16} />}
+            onClick={openCreateLead}
+          >
             Add Lead
           </Button>
         </div>
       </div>
 
       <section className="rounded-lg border border-border bg-surface">
-        {/* <div className="border-b border-border px-5 py-3.5">
-          <DateSelector
-            mode="range"
-            label="Filter by Date Added"
-            value={dateAddedFilter}
-            onChange={setDateAddedFilter}
-            placeholder="All dates"
-          />
-        </div> */}
-
         <div className="p-4">
           <DataTable
             columns={columns}
-            data={filteredLeads}
+            data={leads}
             keyField="id"
+
             searchable
             searchPlaceholder="Search by customer name, AM, email..."
-            pageSize={10}
+
+            serverPagination
+            currentPage={page}
+            totalItems={pagination.total}
+
+            pageSize={pageSize}
+            pageSizeOptions={[10, 25, 50, 100]}
+            showPageSizeSelector
+
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            onSearchChange={handleSearchChange}
+
             bodyHeight="55vh"
-            emptyTitle={isLoading ? "Loading..." : "No Leads"}
+
+            emptyTitle={
+              isLoading
+                ? "Loading..."
+                : "No Leads"
+            }
+
             emptyMessage={
               isLoading
                 ? "Fetching leads from the server..."
+                : search
+                ? "No leads match your search."
                 : 'Click "Add Lead" or "Bulk Upload" to add your first leads.'
             }
+
             renderActions={(row) => (
               <div className="flex items-center gap-1">
-                {CONVERTIBLE_STATUSES.includes(row.status) && (
+                {CONVERTIBLE_STATUSES.includes(
+                  row.status
+                ) && (
                   <Button
                     variant="ghost"
                     size="sm"
                     title="Convert to Account"
-                    onClick={() => requestConvertToAccount(row)}
+                    onClick={() =>
+                      requestConvertToAccount(row)
+                    }
                   >
-                    <ArrowRightCircle size={16} className="text-success-600" />
+                    <ArrowRightCircle
+                      size={16}
+                      className="text-success-600"
+                    />
                   </Button>
                 )}
 
@@ -328,7 +509,9 @@ export default function Leads() {
                   variant="ghost"
                   size="sm"
                   title="Update Follow-up"
-                  onClick={() => openFollowUp(row)}
+                  onClick={() =>
+                    openFollowUp(row)
+                  }
                 >
                   <CalendarClock size={16} />
                 </Button>
@@ -337,7 +520,9 @@ export default function Leads() {
                   variant="ghost"
                   size="sm"
                   title="Edit Lead"
-                  onClick={() => openEditLead(row)}
+                  onClick={() =>
+                    openEditLead(row)
+                  }
                 >
                   <Pencil size={16} />
                 </Button>
@@ -346,9 +531,14 @@ export default function Leads() {
                   variant="ghost"
                   size="sm"
                   title="Delete Lead"
-                  onClick={() => requestDeleteLead(row)}
+                  onClick={() =>
+                    requestDeleteLead(row)
+                  }
                 >
-                  <Trash2 size={16} className="text-danger-500" />
+                  <Trash2
+                    size={16}
+                    className="text-danger-500"
+                  />
                 </Button>
               </div>
             )}
@@ -358,27 +548,29 @@ export default function Leads() {
 
       <LeadModal
         isOpen={isLeadModalOpen}
-        onClose={() => {
-          setLeadModalOpen(false);
-          setEditingLead(null);
-        }}
-        mode={editingLead ? "edit" : "create"}
+        onClose={closeLeadModal}
+        mode={
+          editingLead ? "edit" : "create"
+        }
         lead={editingLead}
-        onSave={editingLead ? handleEditLead : handleCreateLead}
+        onSave={
+          editingLead
+            ? handleEditLead
+            : handleCreateLead
+        }
       />
 
       <BulkUploadModal
         isOpen={isBulkModalOpen}
-        onClose={() => setBulkModalOpen(false)}
+        onClose={() =>
+          setBulkModalOpen(false)
+        }
         onBulkImport={handleBulkImport}
       />
 
       <FollowUpModal
         isOpen={isFollowUpModalOpen}
-        onClose={() => {
-          setFollowUpModalOpen(false);
-          setFollowUpTarget(null);
-        }}
+        onClose={closeFollowUpModal}
         entity={followUpTarget}
         onSave={handleSaveFollowUp}
       />
@@ -387,7 +579,11 @@ export default function Leads() {
         isOpen={confirmDialog.isOpen}
         onClose={closeConfirmDialog}
         onConfirm={handleConfirmDialogConfirm}
-        variant={confirmDialog.type === "delete" ? "danger" : "default"}
+        variant={
+          confirmDialog.type === "delete"
+            ? "danger"
+            : "default"
+        }
         title={
           confirmDialog.type === "delete"
             ? "Delete this lead?"
@@ -398,7 +594,11 @@ export default function Leads() {
             ? `"${confirmDialog.target?.customerName}" will be permanently removed. This can't be undone.`
             : `"${confirmDialog.target?.customerName}" will be moved out of Leads and created as a new Account.`
         }
-        confirmLabel={confirmDialog.type === "delete" ? "Delete" : "Convert"}
+        confirmLabel={
+          confirmDialog.type === "delete"
+            ? "Delete"
+            : "Convert"
+        }
       />
     </div>
   );

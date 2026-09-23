@@ -1,5 +1,5 @@
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button, Badge } from "../../components/ui";
 import DataTable from "../../components/ui/DataTable";
@@ -13,15 +13,17 @@ import { useActivity } from "../../hooks/useActivity";
 
 import { EMPLOYEE_TABLE_COLUMNS } from "../../data/Employeedata";
 import { ROLE_LABELS, ROLE_BADGE_VARIANT } from "../../utils/roles";
+import useDebounce from "../../hooks/useDebouce";
+import { employeesApi } from "../../api/Employeeapi";
 
 export default function Employees() {
   const {
-    getVisibleEmployees,
     getEmployeeName,
     addEmployee,
     updateEmployee,
     deleteEmployee,
     isLoading,
+    fetchEmployees,
   } = useEmployees();
 
   const { getTeamName } = useTeams();
@@ -31,13 +33,77 @@ export default function Employees() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
 
-  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, target: null });
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    target: null,
+  });
 
-  const visibleEmployees = getVisibleEmployees(currentUser).map((emp) => ({
-    ...emp,
-    managerName: emp.managerId ? getEmployeeName(emp.managerId) : "—",
-    teamName: emp.teamId ? getTeamName(emp.teamId) : "—",
-  }));
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 400);
+
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
+
+  useEffect(() => {
+    loadEmployees();
+  }, [page, pageSize, debouncedSearch]);
+
+  async function loadEmployees() {
+  try {
+    const response = await employeesApi.list({
+      page,
+      limit: pageSize,
+      search: debouncedSearch,
+    });
+
+    setPagination({
+      ...(response?.pagination || {
+        page,
+        limit: pageSize,
+        total: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }),
+      data: response?.data || [],
+    });
+  } catch (error) {
+    console.error("Failed to fetch employees:", error);
+
+    setPagination({
+      page,
+      limit: pageSize,
+      total: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      data: [],
+    });
+  }
+}
+
+  function handleSearchChange(value) {
+    setSearch(value);
+    setPage(1);
+  }
+
+  function handlePageChange(newPage) {
+    setPage(newPage);
+  }
+
+  function handlePageSizeChange(newSize) {
+    setPageSize(Number(newSize));
+    setPage(1);
+  }
 
   function openCreate() {
     setEditingEmployee(null);
@@ -46,11 +112,17 @@ export default function Employees() {
 
   async function handleCreate(employee) {
     const created = await addEmployee(employee);
+
     logActivity({
       message: `${currentUser.name} added ${created.name} as a new employee`,
       type: "employee",
     });
+
     setModalOpen(false);
+
+    setPage(1);
+
+    await loadEmployees();
   }
 
   function openEdit(employee) {
@@ -60,34 +132,62 @@ export default function Employees() {
 
   async function handleEdit(updatedEmployee) {
     const saved = await updateEmployee(updatedEmployee);
-    logActivity({ message: `${currentUser.name} updated ${saved.name}`, type: "employee" });
+
+    logActivity({
+      message: `${currentUser.name} updated ${saved.name}`,
+      type: "employee",
+    });
+
     setEditingEmployee(null);
     setModalOpen(false);
+
+    await loadEmployees();
   }
 
   function requestDelete(employee) {
-    setConfirmDialog({ isOpen: true, target: employee });
+    setConfirmDialog({
+      isOpen: true,
+      target: employee,
+    });
   }
 
   function closeConfirmDialog() {
-    setConfirmDialog({ isOpen: false, target: null });
+    setConfirmDialog({
+      isOpen: false,
+      target: null,
+    });
   }
 
   async function handleConfirmDelete() {
-    if (confirmDialog.target) {
-      await deleteEmployee(confirmDialog.target.id);
-      logActivity({
-        message: `${currentUser.name} removed ${confirmDialog.target.name}`,
-        type: "employee",
-      });
+    const target = confirmDialog.target;
+
+    if (!target) {
+      closeConfirmDialog();
+      return;
     }
+
+    await deleteEmployee(target.id);
+
+    logActivity({
+      message: `${currentUser.name} removed ${target.name}`,
+      type: "employee",
+    });
+
     closeConfirmDialog();
+
+    if (pagination.total === 1 && page > 1) {
+      setPage((prev) => prev - 1);
+      return;
+    }
+
+    await loadEmployees();
   }
 
   const columns = EMPLOYEE_TABLE_COLUMNS.map((col) => {
     if (col.key === "role") {
       return {
         ...col,
+
         render: (row) => (
           <Badge variant={ROLE_BADGE_VARIANT[row.role] || "neutral"}>
             {ROLE_LABELS[row.role] || row.role}
@@ -99,16 +199,25 @@ export default function Employees() {
     if (col.key === "status") {
       return {
         ...col,
+
         render: (row) => (
-          <Badge variant={row.status === "Active" ? "success" : "neutral"}>{row.status}</Badge>
+          <Badge
+            variant={row.status === "Active" ? "success" : "neutral"}
+          >
+            {row.status}
+          </Badge>
         ),
       };
     }
-     if (col.key === "joinedDate") {
+
+    if (col.key === "joinedDate") {
       return {
         ...col,
+
         render: (row) => {
-          if (!row.joinedDate) return "—";
+          if (!row.joinedDate) {
+            return "—";
+          }
 
           const date = new Date(row.joinedDate);
 
@@ -121,6 +230,26 @@ export default function Employees() {
       };
     }
 
+    if (col.key === "managerName") {
+      return {
+        ...col,
+
+        render: (row) =>
+          row.manager?.name ||
+          (row.managerId ? getEmployeeName(row.managerId) : "—"),
+      };
+    }
+
+    if (col.key === "teamName") {
+      return {
+        ...col,
+
+        render: (row) =>
+          row.team?.name ||
+          (row.teamId ? getTeamName(row.teamId) : "—"),
+      };
+    }
+
     return col;
   });
 
@@ -129,6 +258,7 @@ export default function Employees() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Employees</h1>
+
           <p className="page-subtitle">
             {currentUser?.role === "admin"
               ? "Everyone across the organization."
@@ -137,24 +267,46 @@ export default function Employees() {
         </div>
 
         {can("ADD_EMPLOYEE") && (
-          <Button leftIcon={<Plus size={16} />} onClick={openCreate}>
+          <Button
+            leftIcon={<Plus size={16} />}
+            onClick={openCreate}
+          >
             Add Employee
           </Button>
         )}
       </div>
 
       <section className="rounded-lg border border-border mt-4 bg-surface">
-       
         <div className="p-4">
           <DataTable
             columns={columns}
-            data={visibleEmployees}
+            data={pagination.data || []}
             keyField="id"
+
             searchable
             searchPlaceholder="Search by name, email, role..."
-            pageSize={10}
+
+            serverPagination
+
+            currentPage={page}
+            pageSize={pageSize}
+            pageSizeOptions={[10, 25, 50, 100]}
+            totalItems={pagination.total || 0}
+
+            showPageSizeSelector
+
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            onSearchChange={handleSearchChange}
+
             bodyHeight="55vh"
-            emptyTitle={isLoading ? "Loading..." : "No Employees"}
+
+            emptyTitle={
+              isLoading
+                ? "Loading..."
+                : "No Employees"
+            }
+
             emptyMessage={
               isLoading
                 ? "Fetching employees..."
@@ -162,10 +314,16 @@ export default function Employees() {
                 ? 'Click "Add Employee" to add your first team member.'
                 : "No employees found."
             }
+
             renderActions={(row) =>
               can("EDIT_EMPLOYEE") && (
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" title="Edit" onClick={() => openEdit(row)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Edit"
+                    onClick={() => openEdit(row)}
+                  >
                     <Pencil size={16} />
                   </Button>
 
@@ -176,7 +334,10 @@ export default function Employees() {
                       title="Delete"
                       onClick={() => requestDelete(row)}
                     >
-                      <Trash2 size={16} className="text-danger-500" />
+                      <Trash2
+                        size={16}
+                        className="text-danger-500"
+                      />
                     </Button>
                   )}
                 </div>

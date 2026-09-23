@@ -83,12 +83,10 @@ export async function buildTeamScopeWhere(currentUser) {
   };
 }
 export async function buildTaskScopeWhere(currentUser) {
-  // SuperAdmin → complete system access
   if (currentUser.role === "superAdmin") {
     return {};
   }
 
-  // Normal users must belong to a department
   if (!currentUser.departmentId) {
     return {
       assignee: {
@@ -97,7 +95,6 @@ export async function buildTaskScopeWhere(currentUser) {
     };
   }
 
-  // Admin → all tasks of their department
   if (currentUser.role === "admin") {
     return {
       assignee: {
@@ -106,8 +103,6 @@ export async function buildTaskScopeWhere(currentUser) {
     };
   }
 
-  // Manager → own + direct employees,
-  // but only inside the same department
   if (currentUser.role === "manager") {
     const employees = await prisma.user.findMany({
       where: {

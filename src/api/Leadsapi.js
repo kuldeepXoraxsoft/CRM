@@ -1,7 +1,13 @@
 import client from "./client";
 
 export const leadsApi = {
-  list: () => client.get("/leads").then((r) => r.data),
+  list: ({ page = 1, limit = 20, search = "" } = {}) => client.get("/leads", {
+      params: {
+        page,
+        limit,
+        search: search || undefined,
+      },
+    }).then((r) => r.data),
   get: (id) => client.get(`/leads/${id}`).then((r) => r.data),
   create: (data) => client.post("/leads", data).then((r) => r.data),
   bulkCreate: (leads) => client.post("/leads/bulk", { leads }).then((r) => r.data),

@@ -37,8 +37,6 @@ export default function AssignedTaskModal({ isOpen, onClose, task, onSave }) {
 
   if (!task) return null;
 
-  // Comments post immediately via their own inline submit in
-  // CommentsThread, independent of the modal's main Save button.
   async function handleAddComment(text) {
     const updatedTask = await tasksApi.addComment(task.id, text);
     setComments(updatedTask.comments || []);

@@ -361,7 +361,6 @@ model Activity {
   message String
   type    String @default("general")
 
-  // Department scope
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
 

@@ -7,10 +7,8 @@ import { CONVERTIBLE_LEAD_STATUSES } from "../constants/allowedValues.js";
 import { notifyLeadStakeholders } from "../helpers/leadNotificationHelper.js";
 import { notifyMany } from "../services/notificationService.js";
 import { getDepartmentStakeholderIds } from "../helpers/notificationScopeHelper.js";
+import { getPagination } from "../utils/pagination.js";
 
-/* --------------------------------------------------
-   COMMON INCLUDE
--------------------------------------------------- */
 
 const LEAD_INCLUDE = {
   cyvoraAM: {
@@ -28,9 +26,6 @@ const LEAD_INCLUDE = {
   },
 };
 
-/* --------------------------------------------------
-   RESOLVE CYVORA AM NAME -> USER ID
--------------------------------------------------- */
 
 async function resolveCyvoraAMId(cyvoraAM, currentUser) {
   if (!cyvoraAM?.trim()) {
@@ -75,9 +70,6 @@ async function resolveCyvoraAMId(cyvoraAM, currentUser) {
   return am.id;
 }
 
-/* --------------------------------------------------
-   BUILD LEAD DATA
--------------------------------------------------- */
 
 async function buildLeadData(
   body,
@@ -128,9 +120,6 @@ async function buildLeadData(
     cyvoraAMId = currentUser.id;
   }
 
-  /* --------------------------------------------------
-     DEPARTMENT
-  -------------------------------------------------- */
 
   let departmentId;
 
@@ -141,10 +130,6 @@ async function buildLeadData(
       throw new ApiError(400, "Department is required for SuperAdmin.");
     }
   } else {
-    /*
-     * Never trust departmentId from frontend
-     * for normal users.
-     */
     departmentId = existing.departmentId ?? currentUser.departmentId;
 
     if (!departmentId) {
@@ -152,84 +137,117 @@ async function buildLeadData(
     }
   }
 
-  /* --------------------------------------------------
-     FINAL DATA
-  -------------------------------------------------- */
-
   return {
     customerName: body.customerName ?? existing.customerName,
-
     departmentId,
-
     cyvoraAMId,
-
     clientAM: body.clientAM ?? existing.clientAM,
-
     status: body.status ?? existing.status,
-
     traffic: body.traffic ?? existing.traffic,
-
     dateAdded: body.dateAdded
       ? new Date(body.dateAdded)
       : isCreate
         ? new Date()
         : undefined,
-
     statusNotes: body.statusNotes ?? existing.statusNotes,
-
     nextStep: body.nextStep ?? existing.nextStep,
-
     dealsInProgress: body.dealsInProgress ?? existing.dealsInProgress,
-
     agreementStatus: body.agreementStatus ?? existing.agreementStatus,
-
     payment: body.payment ?? existing.payment,
-
     creditLimit: body.creditLimit ?? existing.creditLimit,
-
     theirRoutes: body.theirRoutes ?? existing.theirRoutes,
-
     theirRequirements: body.theirRequirements ?? existing.theirRequirements,
-
     ratesOffered: body.ratesOffered ?? existing.ratesOffered,
-
     routeListOnSheets: body.routeListOnSheets ?? existing.routeListOnSheets,
-
     leadSource: body.leadSource ?? existing.leadSource,
-
     phoneNumber: body.phoneNumber ?? existing.phoneNumber,
-
     teamsHandle: body.teams ?? body.teamsHandle ?? existing.teamsHandle,
-
     email: body.email ?? existing.email,
-
     ...(isCreate && {
       followUpDate: body.followUpDate ? new Date(body.followUpDate) : null,
     }),
   };
 }
 
-/* --------------------------------------------------
-   LIST LEADS
--------------------------------------------------- */
 
 export const listLeads = asyncHandler(async (req, res) => {
   const where = await buildLeadAccountScopeWhere(req.user);
+  const { page, limit, skip } = getPagination(req);
+  const search = req.query.search?.trim();
 
-  const leads = await prisma.lead.findMany({
-    where,
-    include: LEAD_INCLUDE,
-    orderBy: {
-      createdAt: "desc",
+  if (search) {
+    where.OR = [
+      {
+        customerName: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+      {
+        clientAM: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+      {
+        phoneNumber: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+      {
+        email: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+      {
+        cyvoraAM: {
+          name: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      },
+    ];
+  }
+  const [leads, total] = await prisma.$transaction([
+    prisma.lead.findMany({
+      where,
+      include: LEAD_INCLUDE,
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+        {
+          id: "desc",
+        },
+      ],
+      skip,
+      take: limit,
+    }),
+
+    prisma.lead.count({
+      where,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+
+  res.json({
+    data: leads,
+
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
     },
   });
-
-  res.json(leads);
 });
 
-/* --------------------------------------------------
-   GET SINGLE LEAD
--------------------------------------------------- */
 
 export const getLead = asyncHandler(async (req, res) => {
   const scope = await buildLeadAccountScopeWhere(req.user);
@@ -249,9 +267,6 @@ export const getLead = asyncHandler(async (req, res) => {
   res.json(lead);
 });
 
-/* --------------------------------------------------
-   CREATE LEAD
--------------------------------------------------- */
 
 export const createLead = asyncHandler(async (req, res) => {
   if (!req.body.customerName?.trim()) {
@@ -285,9 +300,6 @@ export const createLead = asyncHandler(async (req, res) => {
   res.status(201).json(lead);
 });
 
-/* --------------------------------------------------
-   BULK CREATE LEADS
--------------------------------------------------- */
 
 export const bulkCreateLeads = asyncHandler(async (req, res) => {
   const { leads } = req.body;
@@ -342,9 +354,6 @@ export const bulkCreateLeads = asyncHandler(async (req, res) => {
   });
 });
 
-/* --------------------------------------------------
-   UPDATE LEAD
--------------------------------------------------- */
 
 export const updateLead = asyncHandler(async (req, res) => {
   const scope = await buildLeadAccountScopeWhere(req.user);
@@ -388,9 +397,6 @@ export const updateLead = asyncHandler(async (req, res) => {
   res.json(updated);
 });
 
-/* --------------------------------------------------
-   DELETE LEAD
--------------------------------------------------- */
 
 export const deleteLead = asyncHandler(async (req, res) => {
   const scope = await buildLeadAccountScopeWhere(req.user);
@@ -422,9 +428,6 @@ export const deleteLead = asyncHandler(async (req, res) => {
   res.status(204).send();
 });
 
-/* --------------------------------------------------
-   UPDATE FOLLOW UP
--------------------------------------------------- */
 
 export const updateLeadFollowUp = asyncHandler(async (req, res) => {
   const { followUpDate, remark } = req.body;
@@ -491,9 +494,6 @@ export const updateLeadFollowUp = asyncHandler(async (req, res) => {
   res.json(updated);
 });
 
-/* --------------------------------------------------
-   CONVERT LEAD -> ACCOUNT
--------------------------------------------------- */
 
 export const convertLeadToAccount = asyncHandler(async (req, res) => {
   const scope = await buildLeadAccountScopeWhere(req.user);
@@ -516,7 +516,6 @@ export const convertLeadToAccount = asyncHandler(async (req, res) => {
     );
   }
 
-  // Department is required for CRM scope.
   if (!lead.departmentId) {
     throw new ApiError(
       400,
@@ -574,7 +573,6 @@ export const convertLeadToAccount = asyncHandler(async (req, res) => {
       },
     });
 
-    // Remove the original lead after account creation.
     await tx.lead.delete({
       where: {
         id: lead.id,

@@ -11,7 +11,12 @@ export function useEmployees() {
     setIsLoading(true);
     try {
       const data = await employeesApi.list();
-      setEmployees(data);
+      // Defensive: handles both a plain array response AND a
+      // { success, data } wrapped response, so a backend response-shape
+      // change doesn't silently crash the whole page with
+      // ".filter is not a function".
+      const list = Array.isArray(data) ? data : data?.data || [];
+      setEmployees(list);
     } finally {
       setIsLoading(false);
     }
@@ -23,14 +28,16 @@ export function useEmployees() {
 
   async function addEmployee(employee) {
     const created = await employeesApi.create(employee);
-    setEmployees((prev) => [created, ...prev]);
-    return created;
+    const newEmployee = created?.data ?? created;
+    setEmployees((prev) => [newEmployee, ...prev]);
+    return newEmployee;
   }
 
   async function updateEmployee(updatedEmployee) {
     const saved = await employeesApi.update(updatedEmployee.id, updatedEmployee);
-    setEmployees((prev) => prev.map((e) => (e.id === saved.id ? saved : e)));
-    return saved;
+    const updated = saved?.data ?? saved;
+    setEmployees((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+    return updated;
   }
 
   async function deleteEmployee(id) {
@@ -38,8 +45,9 @@ export function useEmployees() {
     setEmployees((prev) => prev.filter((e) => e.id !== id));
   }
 
-  // Backend already returns a role-scoped list (see
-  // employeeController.listEmployees), so this just returns what we have.
+  // Backend already returns a role-scoped list, so this just returns
+  // what we have - kept as a function (with an ignored arg) so call
+  // sites like getVisibleEmployees(currentUser) keep working.
   function getVisibleEmployees() {
     return employees;
   }
