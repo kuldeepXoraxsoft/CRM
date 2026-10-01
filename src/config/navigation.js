@@ -9,6 +9,7 @@ import {
     Settings,
     ShieldCheck,
     Network,
+    MessageSquareText,
 } from "lucide-react";
 
 export const getNavItems = (role) => {
@@ -55,6 +56,11 @@ export const getNavItems = (role) => {
         //     label: "Meetings",
         //     to: "meetings",
         //     icon: CalendarCheck,
+        // },
+        // {
+        //     label: "Tickets",
+        //     to: "tickets",
+        //     icon: MessageSquareText,
         // }
     ];
 

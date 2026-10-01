@@ -7,11 +7,6 @@ import NotificationPagination from "./NotificationPagination";
 
 import { NOTIFICATIONS } from "../../data/notifications";
 
-/**
- * NotificationCenter
- *
- * Complete notification management component.
- */
 
 const PAGE_SIZE = 5;
 
@@ -22,9 +17,6 @@ export default function NotificationCenter() {
 
   const [currentPage, setCurrentPage] = useState(1);
 
-  /* ------------------------
-      FILTER
-  ------------------------- */
 
   const filteredNotifications = useMemo(() => {
     if (activeTab === "unread") {
@@ -34,9 +26,6 @@ export default function NotificationCenter() {
     return notifications;
   }, [notifications, activeTab]);
 
-  /* ------------------------
-      PAGINATION
-  ------------------------- */
 
   const totalPages = Math.max(
     1,
@@ -49,15 +38,9 @@ export default function NotificationCenter() {
     return filteredNotifications.slice(start, start + PAGE_SIZE);
   }, [filteredNotifications, currentPage]);
 
-  /* ------------------------
-      COUNTS
-  ------------------------- */
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  /* ------------------------
-      ACTIONS
-  ------------------------- */
 
   function handleMarkRead(id) {
     setNotifications((prev) =>
@@ -86,9 +69,6 @@ export default function NotificationCenter() {
     setNotifications([]);
   }
 
-  /* ------------------------
-      TAB CHANGE
-  ------------------------- */
 
   function handleTabChange(tab) {
     setActiveTab(tab);
@@ -96,9 +76,6 @@ export default function NotificationCenter() {
     setCurrentPage(1);
   }
 
-  /* ------------------------
-      PAGE CHANGE
-  ------------------------- */
 
   function handlePageChange(page) {
     setCurrentPage(page);

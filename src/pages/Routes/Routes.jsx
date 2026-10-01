@@ -156,6 +156,7 @@ export default function AccountRoutes() {
         <div className="routes-panel-filters">
           
           <Select
+            size="sm"
             label="Route Type"
             options={[ALL_OPTION, ...ROUTE_TYPE_OPTIONS]}
             value={routeTypeFilter}
@@ -163,6 +164,7 @@ export default function AccountRoutes() {
           />
 
           <Select
+            size="sm"
             label="Content Type"
             options={[ALL_OPTION, ...CONTENT_TYPE_OPTIONS]}
             value={contentTypeFilter}
@@ -170,6 +172,7 @@ export default function AccountRoutes() {
           />
 
           <Select
+            size="sm"
             label="Status"
             options={[ALL_OPTION, ...ROUTE_STATUS_OPTIONS]}
             value={statusFilter}

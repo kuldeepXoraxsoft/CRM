@@ -124,10 +124,6 @@ export default function DataTable({
     pageSize,
   ]);
 
-  /*
-   * Reset page when normal client-side
-   * filtering changes.
-   */
   useEffect(() => {
     if (!serverPagination) {
       setInternalPage(1);

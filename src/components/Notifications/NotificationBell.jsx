@@ -51,7 +51,9 @@ export default function NotificationBell() {
 
   useEffect(() => {
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 60000);
+    const interval = setInterval(fetchUnreadCount, 600000
+      
+    );
     return () => clearInterval(interval);
   }, []);
 

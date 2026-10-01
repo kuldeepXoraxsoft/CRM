@@ -11,7 +11,7 @@ app.listen(PORT, () => {
 });
 
 cron.schedule(
-  "* * * * *",
+  "*/10 * * * *",
   () => {
     console.log("Running follow-up reminder job...");
 

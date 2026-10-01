@@ -12,6 +12,7 @@ import Teams from "../pages/Teams/Teams";
 import Settings from "../pages/Settings/Settings";
 import AccountRoutes from "../pages/Routes/Routes";
 import Management from "../pages/Management/Management";
+// import Meetings from "../pages/Meetings/Meetings";
 
 export default function AppRoutes() {
     return (
@@ -50,6 +51,10 @@ export default function AppRoutes() {
                         element={<Tasks />}
                     />
 
+                    {/* <Route
+                        path="/meetings"
+                        element={<Meetings />}
+                    /> */}
                     <Route
                       path="/routes"
                       element= {<AccountRoutes/>}

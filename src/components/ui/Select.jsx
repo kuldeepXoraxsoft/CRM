@@ -9,21 +9,6 @@ const SIZES = {
   lg: 'h-12 text-base pl-4 pr-10',
 }
 
-/**
- * Select - a labeled native <select> dropdown, styled to match Input.
- * Use this for simple, short option lists. For searchable / async /
- * multi-select needs, use SearchSelect instead.
- *
- * Props:
- * - label: string
- * - options: Array<{ value, label, disabled? }>
- * - value, onChange: controlled state (onChange receives the raw event)
- * - placeholder: string - shown as a disabled first option when no value
- * - size: 'sm' | 'md' | 'lg' (default 'md')
- * - error / helperText / required / disabled
- * - containerClassName / className
- * - ...rest: any other native select props
- */
 const Select = forwardRef(function Select(
   {
     label,

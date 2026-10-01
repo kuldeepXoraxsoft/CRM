@@ -975,7 +975,7 @@ export default function DateSelector({
                   <div className="date-selector-time-header">
                     <Clock3 size={15} />
                     <span>
-                      Follow-up Time
+                     Time
                     </span>
                   </div>
 
