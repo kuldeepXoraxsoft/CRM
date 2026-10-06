@@ -1,0 +1,12 @@
+import { Router } from "express";
+import { authenticate } from "../middleware/auth.js";
+import { listMeetings, createMeeting, updateMeeting, cancelMeeting, deleteMeeting, respondToMeeting } from "../controllers/meetingController.js";
+const router = Router();
+router.use(authenticate);
+router.get("/", listMeetings);
+router.post("/", createMeeting);
+router.patch("/:id", updateMeeting);
+router.post("/:id/cancel", cancelMeeting);
+router.post("/:id/respond", respondToMeeting);
+router.delete("/:id", deleteMeeting);
+export default router;
