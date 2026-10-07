@@ -3,8 +3,6 @@ import {
   Menu,
   ChevronDown,
   LogOut,
-  Settings,
-  UserCircle,
   Key,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -102,20 +100,20 @@ export default function Navbar({ onMenuClick }) {
     <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-4 border-b border-border bg-surface px-4 sm:px-6">
 
       {/* Mobile Menu */}
-      <button
+      {/* <button
         type="button"
         onClick={onMenuClick}
         className="text-ink-muted hover:text-ink md:hidden"
         aria-label="Open sidebar"
       >
         <Menu size={22} />
-      </button>
+      </button> */}
 
       {/* Right Section */}
       <div className="ml-auto flex items-center gap-3">
 
         {/* <Tooltip title={isDark ? "Light Mode" : "Dark Mode"}>
-  <IconButton onClick={toggleTheme}>
+  <IconButton >
     {isDark ? <LightMode /> : <DarkMode />}
   </IconButton>
 </Tooltip> */}
