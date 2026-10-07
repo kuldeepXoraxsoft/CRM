@@ -207,7 +207,7 @@ export default function BulkUploadModal({ isOpen, onClose, onBulkImport }) {
                 <thead className="bg-canvas">
                   <tr>
                     <th className="px-3 py-2 font-semibold text-ink">Customer Name</th>
-                    <th className="px-3 py-2 font-semibold text-ink">Cyvora AM</th>
+                    <th className="px-3 py-2 font-semibold text-ink">Company AM</th>
                     <th className="px-3 py-2 font-semibold text-ink">Status</th>
                     <th className="px-3 py-2 font-semibold text-ink">Phone Number</th>
                     <th className="px-3 py-2 font-semibold text-ink">Email</th>

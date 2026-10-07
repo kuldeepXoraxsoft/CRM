@@ -58,7 +58,7 @@ export const LEAD_SOURCE_OPTIONS = [
 
 export const LEAD_TABLE_COLUMNS = [
   { key: "customerName", label: "Customer Name" },
-  { key: "cyvoraAM", label: "Cyvora AM" },
+  { key: "cyvoraAM", label: "Company AM" },
   { key: "clientAM", label: "Client AM" },
   { key: "status", label: "Status" },
   { key: "traffic", label: "Traffic" },

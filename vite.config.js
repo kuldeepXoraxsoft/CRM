@@ -21,7 +21,7 @@ export default defineConfig({
       manifest: {
         name: "CRM",
         short_name: "CRM",
-        description: "Cyvora CRM Management System",
+        description: "CRM Management System",
 
         theme_color: "#ffffff",
         background_color: "#ffffff",
