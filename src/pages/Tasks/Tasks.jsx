@@ -9,6 +9,7 @@ import {
   Eye,
   UserPlus,
 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 import { Button, Badge } from "../../components/ui";
 import DataTable from "../../components/ui/DataTable";
@@ -53,6 +54,9 @@ export default function Tasks() {
   const [isAssignTaskModalOpen, setAssignTaskModalOpen] = useState(false);
 
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, target: null });
+  const [searchParams] = useSearchParams();
+
+  const activeTab = searchParams.get("tab") || "todo";
 
   /* -----------------------------
       SERVER-SIDE FETCH
@@ -354,12 +358,11 @@ export default function Tasks() {
             }
             renderActions={(row) => (
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                leftIcon={<Eye size={15} />}
                 onClick={() => openAssignedTask(row)}
               >
-                View / Update
+                <Pencil size={16}/>
               </Button>
             )}
           />
@@ -400,7 +403,10 @@ export default function Tasks() {
         </div>
       </div>
 
-      <Tabs tabs={tabs} defaultTabId="todo" />
+     <Tabs
+      tabs={tabs}
+      defaultTabId={activeTab}
+    />
 
       <TaskModal
         isOpen={isTaskModalOpen}

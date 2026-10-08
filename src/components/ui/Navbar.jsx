@@ -47,10 +47,10 @@ export default function Navbar({ onMenuClick }) {
       document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  function goToSettings() {
-    setIsMenuOpen(false);
-    navigate("/settings");
-  }
+  // function goToSettings() {
+  //   setIsMenuOpen(false);
+  //   navigate("/settings");
+  // }
 
   function closeConfirmDialog() {
     setConfirmDialog({
@@ -108,6 +108,10 @@ export default function Navbar({ onMenuClick }) {
       >
         <Menu size={22} />
       </button> */}
+       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
+              {/* <Users size={18} /> */}
+             <img src="/logo.svg" alt="" className="brand-logo" />
+            </span>
 
       {/* Right Section */}
       <div className="ml-auto flex items-center gap-3">

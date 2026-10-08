@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { X, Zap } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { useAuth } from "../../context/AuthContext";
 import { getNavItems } from "../../config/navigation";
@@ -42,8 +42,9 @@ export default function Sidebar({ isOpen = false, onClose }) {
         {/* Header */}
         <div className="flex h-16 shrink-0 items-center justify-between px-4">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary-500 text-white">
-              <Users size={18} />
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md ">
+              {/* <Users size={18} /> */}
+             <img src="/logo.svg" alt="" className="brand-logo" />
             </span>
 
             <span

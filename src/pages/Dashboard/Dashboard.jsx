@@ -13,6 +13,7 @@ import {
   Circle,
   CheckCircle2,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
@@ -103,6 +104,7 @@ function isCompleted(status) {
 
 export default function Dashboard() {
   const { currentUser, can } = useAuth();
+  const navigate = useNavigate();
   const [ accounts , setAccounts ] = useState(0); 
   const { getVisibleEmployees } = useEmployees();
 
@@ -386,10 +388,11 @@ export default function Dashboard() {
                 My To-do
               </h2>
             </div>
-
+            
             <span className="shrink-0 text-xs text-ink-faint">
               {todos.length}
             </span>
+            <Button variant="link"  onClick={() => navigate("/tasks?tab=todo")}>View more</Button>
           </div>
 
           <div className="min-w-0">
@@ -563,6 +566,7 @@ export default function Dashboard() {
             <span className="shrink-0 text-xs text-ink-faint">
               {assignedTasks.length}
             </span>
+             <Button variant="link"  onClick={() => navigate("/tasks?tab=assigned")}>View more</Button>
           </div>
 
           <div className="min-w-0">
@@ -749,11 +753,11 @@ function DashboardAssignedTask({ task, onView }) {
 
         <Button
           size="sm"
-          variant="outline"
+          variant="ghost"
           className="w-full shrink-0 sm:w-auto"
           onClick={() => onView(task)}
         >
-          View / Update
+          <Pencil size={16}/>
         </Button>
       </div>
     </div>

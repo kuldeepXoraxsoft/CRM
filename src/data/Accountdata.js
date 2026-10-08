@@ -42,6 +42,7 @@ export const ACCOUNT_TABLE_COLUMNS = [
   { key: "creditLimit", label: "Credit Limit" },
   { key: "phoneNumber", label: "Phone Number" },
   { key: "email", label: "Email" },
+  { key: "documents", label: "Documents"}
 ];
 
 /* -----------------------------

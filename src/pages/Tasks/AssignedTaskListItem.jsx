@@ -3,6 +3,7 @@ import {
   User,
   FileText,
   Eye,
+  Pencil,
 } from "lucide-react";
 
 import { Badge, Button } from "../../components/ui";
@@ -119,7 +120,7 @@ export default function AssignedTaskListItem({
           leftIcon={<Eye size={15} />}
           onClick={() => onView(task)}
         >
-          View / Update
+          <Pencil size={16}/>
         </Button>
 
       </div>

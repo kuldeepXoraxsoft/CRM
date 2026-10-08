@@ -5,6 +5,7 @@ import {
   Pencil,
   Trash2,
   CalendarClock,
+  Link,
 } from "lucide-react";
 
 import { Button, Badge } from "../../components/ui";
@@ -340,6 +341,15 @@ export default function Account() {
           </button>
         ),
       };
+    }
+    if(col.key === "document") {
+      return {
+        ...col,
+
+        render: (row) => (
+          <Link size={16}/>
+        )
+      }
     }
 
     return col;
