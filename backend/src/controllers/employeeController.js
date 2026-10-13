@@ -6,6 +6,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { logActivity } from "../utils/activityLogger.js";
 import { ROLES } from "../constants/allowedValues.js";
 import { getPagination } from "../utils/pagination.js";
+import { sendWelcomeEmail } from "../services/Emailservice/Mailservice.js";
 
 const SAFE_SELECT = {
   id: true,
@@ -143,12 +144,13 @@ export const createEmployee = asyncHandler(async (req, res) => {
     finalManagerId = req.user.id;
   }
 
+  // Hash the password for database storage.
   const hashed = await bcrypt.hash(password, 10);
 
   const employee = await prisma.user.create({
     data: {
-      name,
-      email,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
       password: hashed,
       role: finalRole,
       departmentId: req.user.departmentId,
@@ -156,7 +158,6 @@ export const createEmployee = asyncHandler(async (req, res) => {
       teamId: teamId || null,
       status: status || "Active",
     },
-
     select: SAFE_SELECT,
   });
 
@@ -165,6 +166,18 @@ export const createEmployee = asyncHandler(async (req, res) => {
     `${req.user.name} added ${employee.name} as a new employee`,
     "employee"
   );
+
+  // Send welcome email without delaying the API response.
+  // "password" is the original password from the request.
+  if (employee.status === "Active") {
+    sendWelcomeEmail({
+      to: employee.email,
+      name: employee.name,
+      temporaryPassword: password,
+    }).catch((err) => {
+      console.error("Welcome email failed:", err.message);
+    });
+  }
 
   res.status(201).json(employee);
 });
