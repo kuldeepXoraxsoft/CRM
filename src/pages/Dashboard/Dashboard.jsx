@@ -388,13 +388,16 @@ export default function Dashboard() {
                 My To-do
               </h2>
             </div>
-            
-            <span className="shrink-0 text-xs text-ink-faint">
-              {todos.length}
-            </span>
-            <Button variant="link"  onClick={() => navigate("/tasks?tab=todo")}>View more</Button>
-          </div>
 
+            <div className="ml-auto flex shrink-0 items-center gap-3">
+              <Button
+                variant="link"
+                onClick={() => navigate("/tasks?tab=todo")}
+              >
+                View more
+              </Button>
+            </div>
+          </div>
           <div className="min-w-0">
             {isLoadingTodos ? (
               <div className="px-5 py-8 text-center text-sm text-ink-muted">
@@ -562,11 +565,9 @@ export default function Dashboard() {
                 Assigned Tasks
               </h2>
             </div>
-
-            <span className="shrink-0 text-xs text-ink-faint">
-              {assignedTasks.length}
-            </span>
+                <div className="ml-auto flex shrink-0 items-center gap-3">        
              <Button variant="link"  onClick={() => navigate("/tasks?tab=assigned")}>View more</Button>
+             </div>
           </div>
 
           <div className="min-w-0">
