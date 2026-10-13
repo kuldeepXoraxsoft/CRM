@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "../components/ui/Layout";
 
 import Login from "../pages/Login/Login";
+import ForgotPassword from "../pages/Login/ForgotPassword";
+import ResetPassword from "../pages/Login/ResetPassword";
 import Dashboard from "../pages/Dashboard/Dashboard";
 import Account from "../pages/Accounts/Account";
 import Leads from "../pages/Leads/Leads";
@@ -26,6 +28,16 @@ export default function AppRoutes() {
                 <Route
                     path="/"
                     element={<Login />}
+                />
+
+                <Route
+                    path="/forgot-password"
+                    element={<ForgotPassword />}
+                />
+
+                <Route
+                    path="/reset-password"
+                    element={<ResetPassword />}
                 />
 
                 {/* Protected */}

@@ -121,10 +121,24 @@ model User {
 
   // Refresh Tokens
   refreshTokens RefreshToken[]
+  passwordResets PasswordReset[]
 
   @@index([departmentId])
   @@index([teamId])
   @@index([managerId])
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // -----------------------------

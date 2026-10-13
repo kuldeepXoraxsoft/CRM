@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Button, Input, Checkbox } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
@@ -10,12 +10,12 @@ import "./Login.css";
 const APP_NAME = import.meta.env.VITE_APP_NAME || "CRM";
 
 // Static preview of the lead pipeline shown on the left panel
-const PIPELINE = [
-  { stage: "New", count: 48, width: "100%" },
-  { stage: "Contacted", count: 31, width: "68%" },
-  { stage: "Proposal", count: 17, width: "40%" },
-  { stage: "Won", count: 9, width: "22%" },
-];
+// const PIPELINE = [
+//   { stage: "New", count: 48, width: "100%" },
+//   { stage: "Contacted", count: 31, width: "68%" },
+//   { stage: "Proposal", count: 17, width: "40%" },
+//   { stage: "Won", count: 9, width: "22%" },
+// ];
 
 export default function Login() {
   const navigate = useNavigate();
@@ -135,9 +135,9 @@ export default function Login() {
                   checked={form.remember}
                   onChange={(e) => handleChange("remember", e.target.checked)}
                 />
-                <button type="button" className="forgot-btn">
+                <Link to="/forgot-password" className="forgot-btn">
                   Forgot password?
-                </button>
+                </Link>
               </div>
 
               {error && (

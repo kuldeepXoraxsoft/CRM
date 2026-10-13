@@ -30,7 +30,8 @@ export default function ConfirmDialog({
   const isDanger = variant === "danger";
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="sm">
+  
+    <Modal showCloseButton = {false}  isOpen={isOpen} onClose={onClose} size="sm">
       <div className="flex flex-col items-center py-0 text-center">
         <div
           className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
