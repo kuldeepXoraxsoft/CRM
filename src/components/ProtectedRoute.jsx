@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import Spinner from "./ui/Spinner";
-import Unauthorized from "../pages/Errors/Unauthorized";
+import Unauthorized from "../pages/Errors/UnAuthorized";
 
 /**
  * ProtectedRoute
