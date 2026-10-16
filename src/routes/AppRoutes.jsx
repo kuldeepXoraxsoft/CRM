@@ -1,10 +1,13 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Layout from "../components/ui/Layout";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 import Login from "../pages/Login/Login";
 import ForgotPassword from "../pages/Login/ForgotPassword";
 import ResetPassword from "../pages/Login/ResetPassword";
+import NotFound from "../pages/Errors/NotFound";
+
 import Dashboard from "../pages/Dashboard/Dashboard";
 import Account from "../pages/Accounts/Account";
 import Leads from "../pages/Leads/Leads";
@@ -17,6 +20,12 @@ import Management from "../pages/Management/Management";
 import Meetings from "../pages/Meetings/Meetings";
 import Tickets from "../pages/Tickets/Tickets";
 
+// Same role groups as config/navigation.js (sidebar), so menu and access always match
+const STAFF = ["employee", "manager", "admin"]; // everyone except superAdmin
+const LEADERSHIP = ["manager", "admin"];
+const SUPER_ADMIN = ["superAdmin"];
+const ALL = ["superAdmin", "admin", "manager", "employee"];
+
 export default function AppRoutes() {
     return (
         <BrowserRouter>
@@ -24,82 +33,73 @@ export default function AppRoutes() {
             <Routes>
 
                 {/* Public */}
+                <Route path="/" element={<Login />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
 
+                {/* Protected: must be logged in */}
                 <Route
-                    path="/"
-                    element={<Login />}
-                />
+                    element={
+                        <ProtectedRoute>
+                            <Layout />
+                        </ProtectedRoute>
+                    }
+                >
 
-                <Route
-                    path="/forgot-password"
-                    element={<ForgotPassword />}
-                />
-
-                <Route
-                    path="/reset-password"
-                    element={<ResetPassword />}
-                />
-
-                {/* Protected */}
-
-                <Route element={<Layout />}>
-
+                    {/* Admin / Manager / Employee */}
                     <Route
                         path="/dashboard"
-                        element={<Dashboard />}
+                        element={<ProtectedRoute allowedRoles={STAFF}><Dashboard /></ProtectedRoute>}
                     />
-
                     <Route
                         path="/accounts"
-                        element={<Account />}
+                        element={<ProtectedRoute allowedRoles={STAFF}><Account /></ProtectedRoute>}
                     />
-
                     <Route
                         path="/leads"
-                        element={<Leads />}
+                        element={<ProtectedRoute allowedRoles={STAFF}><Leads /></ProtectedRoute>}
                     />
-
                     <Route
                         path="/tasks"
-                        element={<Tasks />}
+                        element={<ProtectedRoute allowedRoles={STAFF}><Tasks /></ProtectedRoute>}
                     />
-
                     <Route
                         path="/meetings"
-                        element={<Meetings />}
+                        element={<ProtectedRoute allowedRoles={STAFF}><Meetings /></ProtectedRoute>}
                     />
-
                     <Route
                         path="/tickets"
-                        element={<Tickets />}
+                        element={<ProtectedRoute allowedRoles={STAFF}><Tickets /></ProtectedRoute>}
                     />
-
                     <Route
-                      path="/routes"
-                      element= {<AccountRoutes/>}
+                        path="/routes"
+                        element={<ProtectedRoute allowedRoles={STAFF}><AccountRoutes /></ProtectedRoute>}
                     />
-
-                    <Route
-                        path="/employees"
-                        element={<Employees />}
-                    />
-
                     <Route
                         path="/teams"
-                        element={<Teams />}
+                        element={<ProtectedRoute allowedRoles={STAFF}><Teams /></ProtectedRoute>}
                     />
 
+                    {/* Admin / Manager only */}
+                    <Route
+                        path="/employees"
+                        element={<ProtectedRoute allowedRoles={LEADERSHIP}><Employees /></ProtectedRoute>}
+                    />
+
+                    {/* Super Admin only */}
+                    <Route
+                        path="/management"
+                        element={<ProtectedRoute allowedRoles={SUPER_ADMIN}><Management /></ProtectedRoute>}
+                    />
                     <Route
                         path="/settings"
-                        element={<Settings />}
-                    />
-
-                    <Route 
-                       path="/management"
-                       element={<Management />}
+                        element={<ProtectedRoute allowedRoles={ALL}><Settings /></ProtectedRoute>}
                     />
 
                 </Route>
+
+                {/* 404 - any unknown URL */}
+                <Route path="*" element={<NotFound />} />
 
             </Routes>
 

@@ -87,11 +87,11 @@ export const getNavItems = (role) => {
             to: "/tasks",
             icon: ClipboardCheck,
         },
-        // {
-        //     label: "Settings",
-        //     to: "/settings",
-        //     icon: Settings,
-        // }
+        {
+            label: "Settings",
+            to: "/settings",
+            icon: Settings,
+        }
     );
 
     return items;

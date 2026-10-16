@@ -5,7 +5,7 @@ import { Button } from "../../components/ui";
 import Tabs from "../../components/ui/Tabs";
 
 import ProfileSection from "./ProfileSection";
-import PreferencesSection from "./Preferencessection";
+// import PreferencesSection from "./Preferencessection";
 import NotificationsSection from "./Notificationssection";
 import OrganizationSection from "./Organizationsection";
 
@@ -46,17 +46,17 @@ export default function Settings() {
         />
       ),
     },
-    {
-      id: "preferences",
-      label: "Preferences",
-      icon: Palette,
-      content: (
-        <PreferencesSection
-          preferences={settings.preferences}
-          onChange={(updates) => updateSection("preferences", updates)}
-        />
-      ),
-    },
+    // {
+    //   id: "preferences",
+    //   label: "Preferences",
+    //   icon: Palette,
+    //   content: (
+    //     <PreferencesSection
+    //       preferences={settings.preferences}
+    //       onChange={(updates) => updateSection("preferences", updates)}
+    //     />
+    //   ),
+    // },
     {
       id: "notifications",
       label: "Notifications",

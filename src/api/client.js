@@ -4,10 +4,10 @@ const TOKEN_KEY = "access_token";
 const USER_KEY = "user";
 
 const client = axios.create({
+
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 });
 
-// Get token from whichever storage contains it
 const getToken = () => {
   return (
     localStorage.getItem(TOKEN_KEY) ||
@@ -15,7 +15,6 @@ const getToken = () => {
   );
 };
 
-// Attach JWT to every outgoing request
 client.interceptors.request.use((config) => {
   const token = getToken();
 
@@ -26,7 +25,6 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-// If token is invalid/expired, clear auth data
 client.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -41,7 +39,6 @@ client.interceptors.response.use(
         window.location.href = "/";
       }
     }
-
     return Promise.reject(error);
   }
 );

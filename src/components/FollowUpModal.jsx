@@ -190,10 +190,16 @@ export default function FollowUpModal({
         )}
 
         <div className="border-t border-border pt-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink">
+         <div className="mb-3 flex items-center justify-between text-sm font-semibold text-ink">
+          <div className="flex items-center gap-2">
             <History size={15} />
             <span>History ({history.length})</span>
           </div>
+
+          <Button variant="link" size="sm">
+            View All
+          </Button>
+        </div>
 
           {history.length === 0 ? (
             <p className="text-xs text-ink-faint">

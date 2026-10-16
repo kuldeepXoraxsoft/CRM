@@ -136,7 +136,7 @@ export default function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
+         <div className="fixed inset-x-3 top-[4.25rem] z-50 overflow-hidden rounded-lg border border-border bg-surface shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <p className="text-sm font-semibold text-ink">Notifications</p>
             {notifications.length > 0 && (
@@ -150,7 +150,7 @@ export default function NotificationBell() {
             )}
           </div>
 
-          <div className="max-h-96 overflow-y-auto">
+         <div className="max-h-[60vh] overflow-y-auto sm:max-h-96">
             {isLoading ? (
               <p className="px-4 py-6 text-center text-sm text-ink-muted">Loading...</p>
             ) : notifications.length === 0 ? (

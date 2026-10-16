@@ -99,16 +99,8 @@ export default function Navbar({ onMenuClick }) {
   return (
     <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-4 border-b border-border bg-surface px-4 sm:px-6">
 
-      {/* Mobile Menu */}
-      {/* <button
-        type="button"
-        onClick={onMenuClick}
-        className="text-ink-muted hover:text-ink md:hidden"
-        aria-label="Open sidebar"
-      >
-        <Menu size={22} />
-      </button> */}
-       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
+     
+       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md md:hidden">
               {/* <Users size={18} /> */}
              <img src="/logo.svg" alt="" className="brand-logo" />
             </span>
