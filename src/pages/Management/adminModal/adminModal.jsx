@@ -1,4 +1,6 @@
+
 import { useEffect, useMemo, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 import {
   Modal,
@@ -23,6 +25,7 @@ export default function AdminModal({
     status: "Active",
   });
 
+  const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -36,6 +39,7 @@ export default function AdminModal({
       status: admin?.status || "Active",
     });
 
+    setShowPassword(false);
     setIsSaving(false);
   }, [isOpen, admin]);
 
@@ -61,16 +65,9 @@ export default function AdminModal({
     const name = form.name.trim();
     const email = form.email.trim().toLowerCase();
 
-    if (!name || !email || !form.departmentId) {
-      return;
-    }
+    if (!name || !email || !form.departmentId) return;
 
-    if (
-      mode === "create" &&
-      !form.password
-    ) {
-      return;
-    }
+    if (mode === "create" && !form.password) return;
 
     try {
       setIsSaving(true);
@@ -82,26 +79,13 @@ export default function AdminModal({
         status: form.status,
       };
 
-      // Password required only while creating.
-      if (mode === "create") {
-        payload.password = form.password;
-      }
-
-      // While editing, send password only
-      // when user entered a new one.
-      if (
-        mode === "edit" &&
-        form.password
-      ) {
+      if (form.password) {
         payload.password = form.password;
       }
 
       await onSave(payload);
     } catch (err) {
-      console.error(
-        "Admin save failed:",
-        err
-      );
+      console.error("Admin save failed:", err);
     } finally {
       setIsSaving(false);
     }
@@ -111,11 +95,7 @@ export default function AdminModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={
-        mode === "edit"
-          ? "Edit Admin"
-          : "Add Admin"
-      }
+      title={mode === "edit" ? "Edit Admin" : "Add Admin"}
       size="md"
       footer={
         <>
@@ -150,12 +130,7 @@ export default function AdminModal({
         <Input
           label="Name"
           value={form.name}
-          onChange={(e) =>
-            updateField(
-              "name",
-              e.target.value
-            )
-          }
+          onChange={(e) => updateField("name", e.target.value)}
           placeholder="Enter admin name"
           required
           autoFocus
@@ -165,47 +140,44 @@ export default function AdminModal({
           label="Email"
           type="email"
           value={form.email}
-          onChange={(e) =>
-            updateField(
-              "email",
-              e.target.value
-            )
-          }
+          onChange={(e) => updateField("email", e.target.value)}
           placeholder="admin@example.com"
           required
         />
 
-        <Input
-          label={
-            mode === "create"
-              ? "Password"
-              : "New Password"
-          }
-          type="password"
-          value={form.password}
-          onChange={(e) =>
-            updateField(
-              "password",
-              e.target.value
-            )
-          }
-          placeholder={
-            mode === "create"
-              ? "Enter password"
-              : "Leave empty to keep current password"
-          }
-          required={mode === "create"}
-        />
+        {/* Password with show/hide toggle */}
+       <div className="relative">
+  <Input
+    label={mode === "create" ? "Password" : "New Password"}
+    type={showPassword ? "text" : "password"}
+    value={form.password}
+    onChange={(e) => updateField("password", e.target.value)}
+    placeholder={
+      mode === "create"
+        ? "Enter password"
+        : "Leave empty to keep current password"
+    }
+    required={mode === "create"}
+  />
+
+  <button
+    type="button"
+    onClick={() => setShowPassword((prev) => !prev)}
+    className="absolute right-3 top-[45px] -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-subtle hover:text-ink"
+    aria-label={showPassword ? "Hide password" : "Show password"}
+  >
+    {showPassword ? (
+      <EyeOff size={18} strokeWidth={1.8} />
+    ) : (
+      <Eye size={18} strokeWidth={1.8} />
+    )}
+  </button>
+</div>
 
         <Select
           label="Department"
           value={form.departmentId}
-          onChange={(e) =>
-            updateField(
-              "departmentId",
-              e.target.value
-            )
-          }
+          onChange={(e) => updateField("departmentId", e.target.value)}
           options={departmentOptions}
           placeholder="Select department"
           required
@@ -214,21 +186,10 @@ export default function AdminModal({
         <Select
           label="Status"
           value={form.status}
-          onChange={(e) =>
-            updateField(
-              "status",
-              e.target.value
-            )
-          }
+          onChange={(e) => updateField("status", e.target.value)}
           options={[
-            {
-              value: "Active",
-              label: "Active",
-            },
-            {
-              value: "Inactive",
-              label: "Inactive",
-            },
+            { value: "Active", label: "Active" },
+            { value: "Inactive", label: "Inactive" },
           ]}
           placeholder="Select status"
           required
