@@ -5,6 +5,7 @@ import { History } from "lucide-react";
 import { Modal, Button, Textarea } from "./ui";
 import DateSelector from "./ui/DateSelector";
 import { formatHistoryTimestamp } from "../utils/Followuputils";
+import { useNavigate } from "react-router-dom";
 
 function formatFollowUpDateTime(value) {
   if (!value) return "Not set";
@@ -53,6 +54,9 @@ export default function FollowUpModal({
   const [remark, setRemark] = useState("");
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const navigate = useNavigate();
+
+
 
   useEffect(() => {
     if (isOpen && entity) {
@@ -196,7 +200,14 @@ export default function FollowUpModal({
             <span>History ({history.length})</span>
           </div>
 
-          <Button variant="link" size="sm">
+          <Button
+            variant="link"
+            size="sm"
+            onClick={() => {
+              onClose();
+              navigate(`/accounts/${entity.id}?tab=followup`);
+            }}
+          >
             View All
           </Button>
         </div>

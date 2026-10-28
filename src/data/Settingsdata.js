@@ -83,10 +83,6 @@ export function createDefaultSettings() {
       leadConverted: true,
       newEmployeeAdded: false,
     },
-    organization: {
-      companyName: "",
-      defaultCurrency: "USD",
-    },
   };
 }
 
@@ -113,9 +109,5 @@ export const SAMPLE_SETTINGS = {
     taskReassigned: true,
     leadConverted: true,
     newEmployeeAdded: true,
-  },
-  organization: {
-    companyName: "Cyvora Tech",
-    defaultCurrency: "USD",
   },
 };

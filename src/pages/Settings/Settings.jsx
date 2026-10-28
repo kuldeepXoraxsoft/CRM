@@ -19,6 +19,7 @@ export default function Settings() {
 
   const [settings, setSettings] = useState(SAMPLE_SETTINGS);
   const [savedMessage, setSavedMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("profile");
 
   function updateSection(section, updates) {
     setSettings((prev) => ({
@@ -70,18 +71,14 @@ export default function Settings() {
     },
   ];
 
-  // Organization settings are only relevant to Managers/Admins.
-  if (can("ADD_EMPLOYEE")) {
+  // Company + department email settings: Admins (own department) and Super Admins.
+  // This tab loads and saves by itself, so it has its own Save buttons.
+  if (can("MANAGE_EMAIL_CONFIG")) {
     tabs.push({
       id: "organization",
       label: "Organization",
       icon: Building2,
-      content: (
-        <OrganizationSection
-          organization={settings.organization}
-          onChange={(updates) => updateSection("organization", updates)}
-        />
-      ),
+      content: <OrganizationSection />,
     });
   }
 
@@ -99,14 +96,16 @@ export default function Settings() {
           {savedMessage && (
             <span className="text-xs font-medium text-success-600">{savedMessage}</span>
           )}
-          <Button leftIcon={<Save size={16} />} onClick={handleSaveAll}>
-            Save Changes
-          </Button>
+          {activeTab !== "organization" && (
+            <Button leftIcon={<Save size={16} />} onClick={handleSaveAll}>
+              Save Changes
+            </Button>
+          )}
         </div>
       </div>
 
       <section className="settings-panel">
-        <Tabs tabs={tabs} defaultTabId="profile" />
+        <Tabs tabs={tabs} defaultTabId="profile" onChange={setActiveTab} />
       </section>
     </div>
   );

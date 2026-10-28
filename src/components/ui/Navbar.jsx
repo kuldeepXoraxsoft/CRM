@@ -13,12 +13,14 @@ import { useNavigate } from "react-router-dom";
 import { Avatar } from "../ui";
 import NotificationBell from "../Notifications/NotificationBell";
 import { useAuth } from "../../context/AuthContext";
+import { useOrganization } from "../../context/OrganizationContext";
 import ConfirmDialog from "../ConfirmDialog";
 import ChangePasswordModal from "../changePasswordModal";
 
 export default function Navbar({ onMenuClick }) {
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
+  const { logoUrl } = useOrganization();
   // const { isDark, toggleTheme } = useThemeMode();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -97,12 +99,11 @@ export default function Navbar({ onMenuClick }) {
   }
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-4 border-b border-border bg-surface px-4 sm:px-6">
-
-     
+    
+<header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-4 border-b border-border bg-surface px-4 sm:px-6">
        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md md:hidden">
               {/* <Users size={18} /> */}
-             <img src="/logo.svg" alt="" className="brand-logo" />
+             <img src={logoUrl} alt="" className="brand-logo" />
             </span>
 
       {/* Right Section */}

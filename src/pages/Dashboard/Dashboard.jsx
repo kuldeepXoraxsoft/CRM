@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   Briefcase,
@@ -19,6 +19,7 @@ import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 import StatCard from "./Statcard";
 import RecentActivityWidget from "./Recentactivitywidget";
+import CalendarWidget from "../../components/calendar/CalendarWidget";
 
 import TaskModal from "../Tasks/TaskModal";
 import AssignedTaskModal from "../Tasks/AssignedTaskModal";
@@ -60,10 +61,7 @@ function getStatusVariant(status) {
     return "success";
   }
 
-  if (
-    normalized === "in-progress" ||
-    normalized === "in progress"
-  ) {
+  if (normalized === "in-progress" || normalized === "in progress") {
     return "primary";
   }
 
@@ -98,6 +96,20 @@ function isCompleted(status) {
   return normalized === "completed";
 }
 
+function isOverdue(dueDate, status) {
+  if (!dueDate || isCompleted(status)) return false;
+
+  const due = toDateInputValue(dueDate);
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
+  return Boolean(due) && due < today;
+}
+
 /* --------------------------------
    DASHBOARD
 -------------------------------- */
@@ -105,7 +117,7 @@ function isCompleted(status) {
 export default function Dashboard() {
   const { currentUser, can } = useAuth();
   const navigate = useNavigate();
-  const [ accounts , setAccounts ] = useState(0); 
+  const [accounts, setAccounts] = useState(0);
   const { getVisibleEmployees } = useEmployees();
 
   const [todos, setTodos] = useState([]);
@@ -118,11 +130,9 @@ export default function Dashboard() {
   const [editingTodo, setEditingTodo] = useState(null);
 
   const [selectedTask, setSelectedTask] = useState(null);
-  const [isAssignedModalOpen, setIsAssignedModalOpen] =
-    useState(false);
+  const [isAssignedModalOpen, setIsAssignedModalOpen] = useState(false);
 
-  const [isAssignTaskModalOpen, setIsAssignTaskModalOpen] =
-    useState(false);
+  const [isAssignTaskModalOpen, setIsAssignTaskModalOpen] = useState(false);
 
   const visibleEmployees = getVisibleEmployees(currentUser);
 
@@ -157,10 +167,7 @@ export default function Dashboard() {
       setTodos(todosData?.data || []);
       setAssignedTasks(tasksData?.data || []);
     } catch (error) {
-      console.error(
-        "Failed to load dashboard tasks:",
-        error
-      );
+      console.error("Failed to load dashboard tasks:", error);
     } finally {
       setIsLoadingTodos(false);
       setIsLoadingTasks(false);
@@ -183,15 +190,10 @@ export default function Dashboard() {
 
   async function handleEditTodo(updatedTodo) {
     try {
-      const saved = await todosApi.update(
-        updatedTodo.id,
-        updatedTodo
-      );
+      const saved = await todosApi.update(updatedTodo.id, updatedTodo);
 
       setTodos((prev) =>
-        prev.map((todo) =>
-          todo.id === saved.id ? saved : todo
-        )
+        prev.map((todo) => (todo.id === saved.id ? saved : todo)),
       );
 
       setEditingTodo(null);
@@ -205,9 +207,7 @@ export default function Dashboard() {
     try {
       await todosApi.remove(id);
 
-      setTodos((prev) =>
-        prev.filter((todo) => todo.id !== id)
-      );
+      setTodos((prev) => prev.filter((todo) => todo.id !== id));
     } catch (error) {
       console.error("Failed to delete todo:", error);
     }
@@ -218,15 +218,10 @@ export default function Dashboard() {
       const saved = await todosApi.toggle(id);
 
       setTodos((prev) =>
-        prev.map((todo) =>
-          todo.id === saved.id ? saved : todo
-        )
+        prev.map((todo) => (todo.id === saved.id ? saved : todo)),
       );
     } catch (error) {
-      console.error(
-        "Failed to update todo status:",
-        error
-      );
+      console.error("Failed to update todo status:", error);
     }
   }
 
@@ -241,11 +236,7 @@ export default function Dashboard() {
 
   function handleUpdateAssignedTask(updatedTask) {
     setAssignedTasks((prev) =>
-      prev.map((task) =>
-        task.id === updatedTask.id
-          ? updatedTask
-          : task
-      )
+      prev.map((task) => (task.id === updatedTask.id ? updatedTask : task)),
     );
 
     setSelectedTask(updatedTask);
@@ -255,17 +246,11 @@ export default function Dashboard() {
     try {
       const created = await tasksApi.create(formData);
 
-      setAssignedTasks((prev) => [
-        created,
-        ...prev,
-      ]);
+      setAssignedTasks((prev) => [created, ...prev]);
 
       setIsAssignTaskModalOpen(false);
     } catch (error) {
-      console.error(
-        "Failed to assign task:",
-        error
-      );
+      console.error("Failed to assign task:", error);
     }
   }
 
@@ -274,15 +259,25 @@ export default function Dashboard() {
   -------------------------------- */
 
   const completedTodos = todos.filter((todo) =>
-    isCompleted(todo.status)
+    isCompleted(todo.status),
   ).length;
 
-  const completedAssignedTasks = assignedTasks.filter(
-    (task) => isCompleted(task.status)
+  const completedAssignedTasks = assignedTasks.filter((task) =>
+    isCompleted(task.status),
   ).length;
 
-  const completedTasksCount =
-    completedTodos + completedAssignedTasks;
+  const completedTasksCount = completedTodos + completedAssignedTasks;
+
+  // Changes whenever a todo / task is added, edited, completed or removed, so
+  // the calendar refetches and never disagrees with the lists below it.
+  const calendarRefreshKey = useMemo(
+    () =>
+      JSON.stringify([
+        todos.map((todo) => [todo.id, todo.status, todo.dueDate]),
+        assignedTasks.map((task) => [task.id, task.status, task.dueDate]),
+      ]),
+    [todos, assignedTasks],
+  );
 
   /* --------------------------------
       TODO MODAL
@@ -306,37 +301,14 @@ export default function Dashboard() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-primary-600">
-            Dashboard
-          </h1>
+          <h1 className="text-2xl font-bold text-primary-600">Dashboard</h1>
 
           <p className="mt-1 break-words text-xs text-ink-muted">
             Welcome back, {currentUser?.name} 👋
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus size={18} />}
-            onClick={openCreateTodo}
-          >
-            New Todo
-          </Button>
-
-          {can("ASSIGN_TASK") && (
-            <Button
-              size="sm"
-              leftIcon={<UserPlus size={16} />}
-              onClick={() =>
-                setIsAssignTaskModalOpen(true)
-              }
-            >
-              Assign Task
-            </Button>
-          )}
-        </div>
+        <div className="flex flex-wrap gap-2"></div>
       </div>
 
       {/* --------------------------------
@@ -348,272 +320,279 @@ export default function Dashboard() {
           label="Accounts"
           value={String(accounts)}
           icon={<Briefcase size={18} />}
+          onClick={() => navigate("/accounts")}
         />
 
         <StatCard
-          label={
-            currentUser?.role === "admin"
-              ? "Employees"
-              : "Your Team"
-          }
+          label={currentUser?.role === "admin" ? "Employees" : "Your Team"}
           value={String(visibleEmployees.length)}
           icon={<Users size={18} />}
+          onClick={() => navigate("/employees")}
         />
 
         <StatCard
           label="Completed Tasks"
           value={String(completedTasksCount)}
           icon={<CheckCircle size={18} />}
+          onClick={() => navigate("/tasks?tab=assigned")}
         />
       </div>
+
+      {/* --------------------------------
+          CALENDAR
+      -------------------------------- */}
+
+      {/* <CalendarWidget refreshKey={calendarRefreshKey} /> */}
+      {/* --------------------------------
+    CALENDAR + RECENT ACTIVITY
+-------------------------------- */}
+
+<div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-3">
+  {/* CALENDAR - 2fr */}
+  <div className="min-w-0 xl:col-span-2">
+    <CalendarWidget refreshKey={calendarRefreshKey} />
+  </div>
+
+  {/* RECENT ACTIVITY - 1fr */}
+  <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-surface p-5">
+    <div className="mb-4 flex items-center gap-2">
+      <Activity size={17} className="shrink-0 text-primary-600" />
+
+      <h2 className="font-semibold text-ink">Recent Activity</h2>
+    </div>
+
+    <RecentActivityWidget />
+  </div>
+</div>
 
       {/* --------------------------------
           TODO + ASSIGNED TASKS
       -------------------------------- */}
 
-      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
-        {/* --------------------------------
-            MY TODOS
-        -------------------------------- */}
+     
+<div className="grid min-w-0 gap-4 xl:grid-cols-2">
+  {/* MY TODOS */}
+  <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-surface">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+      <div className="flex min-w-0 items-center gap-2">
+        <ListChecks size={17} className="shrink-0 text-primary-600" />
+        <h2 className="font-semibold text-ink">My To-do</h2>
+      </div>
 
-        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-surface">
-          <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <div className="flex min-w-0 items-center gap-2">
-              <ListChecks
-                size={17}
-                className="shrink-0 text-primary-600"
-              />
+      <div className="ml-auto flex shrink-0 items-center gap-3">
+        <Button
+          variant="primary"
+          size="sm"
+          leftIcon={<Plus size={18} />}
+          onClick={openCreateTodo}
+        >
+          New Todo
+        </Button>
 
-              <h2 className="break-words font-semibold text-ink">
-                My To-do
-              </h2>
-            </div>
+        <Button variant="link" onClick={() => navigate("/tasks?tab=todo")}>
+          View more
+        </Button>
+      </div>
+    </div>
 
-            <div className="ml-auto flex shrink-0 items-center gap-3">
-              <Button
-                variant="link"
-                onClick={() => navigate("/tasks?tab=todo")}
+    {isLoadingTodos ? (
+      <div className="px-5 py-8 text-center text-sm text-ink-muted">
+        Loading todos...
+      </div>
+    ) : todos.length === 0 ? (
+      <div className="px-5 py-8 text-center">
+        <p className="text-sm text-ink-muted">No todos yet.</p>
+        <Button size="sm" className="mt-3" onClick={openCreateTodo}>
+          Add Todo
+        </Button>
+      </div>
+    ) : (
+      <div className="max-h-[430px] min-w-0 overflow-y-auto">
+        {todos.slice(0, 8).map((todo) => {
+          const completed = isCompleted(todo.status);
+          const overdue = isOverdue(todo.dueDate, todo.status);
+
+          return (
+            <div
+              key={todo.id}
+              className={`flex min-w-0 items-start gap-3 border-b px-4 py-4 last:border-b-0 sm:px-5 ${
+                overdue ? "border-red-200 bg-red-50" : "border-border"
+              }`}
+            >
+              {/* Complete */}
+              <button
+                type="button"
+                className="mt-0.5 shrink-0"
+                onClick={() => handleToggleTodo(todo.id)}
+                title={completed ? "Mark as pending" : "Mark as completed"}
               >
-                View more
-              </Button>
-            </div>
-          </div>
-          <div className="min-w-0">
-            {isLoadingTodos ? (
-              <div className="px-5 py-8 text-center text-sm text-ink-muted">
-                Loading todos...
+                {completed ? (
+                  <CheckCircle2 size={19} className="text-success-500" />
+                ) : (
+                  <Circle
+                    size={19}
+                    className="text-ink-faint hover:text-primary-500"
+                  />
+                )}
+              </button>
+
+              {/* Todo Content */}
+              <div className="min-w-0 flex-1">
+                <h3
+                  className={`break-words [overflow-wrap:anywhere] text-sm font-semibold ${
+                    completed
+                      ? "text-ink-faint line-through"
+                      : "text-ink"
+                  }`}
+                >
+                  {todo.title}
+                </h3>
+
+                {/* Dates */}
+                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5">
+                  <span className="text-xs text-ink-muted">
+                    <span className="font-medium text-ink">Created:</span>{" "}
+                    {toDateInputValue(todo.createdAt) || "-"}
+                  </span>
+
+                  <span className="text-xs text-ink-muted">
+                    <span className="font-medium text-ink">Updated:</span>{" "}
+                    {toDateInputValue(todo.updatedAt) || "-"}
+                  </span>
+
+                  <span
+                    className={`text-xs ${
+                      overdue
+                        ? "font-semibold text-red-600"
+                        : "text-ink-muted"
+                    }`}
+                  >
+                    <span className="font-medium">Due:</span>{" "}
+                    {toDateInputValue(todo.dueDate) || "-"}
+                    {overdue && " (Overdue)"}
+                  </span>
+                </div>
+
+                {/* Priority + Status */}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {todo.priority && (
+                    <Badge
+                      size="sm"
+                      variant={getPriorityVariant(todo.priority)}
+                      dot
+                    >
+                      {formatLabel(todo.priority)}
+                    </Badge>
+                  )}
+
+                  <Badge
+                    size="sm"
+                    variant={getStatusVariant(todo.status)}
+                    dot
+                  >
+                    {formatStatus(todo.status)}
+                  </Badge>
+                </div>
+
+                {/* Notes */}
+                {todo.notes && (
+                  <p className="mt-2 break-words [overflow-wrap:anywhere] text-xs text-ink-faint">
+                    {todo.notes}
+                  </p>
+                )}
               </div>
-            ) : todos.length === 0 ? (
-              <div className="px-5 py-8 text-center">
-                <p className="text-sm text-ink-muted">
-                  No todos yet.
-                </p>
+
+              {/* Actions */}
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Edit"
+                  onClick={() => openEditTodo(todo)}
+                >
+                  <Pencil size={15} />
+                </Button>
 
                 <Button
+                  variant="ghost"
                   size="sm"
-                  className="mt-3"
-                  onClick={openCreateTodo}
+                  title="Delete"
+                  onClick={() => handleDeleteTodo(todo.id)}
                 >
-                  Add Todo
+                  <Trash2 size={15} className="text-danger-500" />
                 </Button>
               </div>
-            ) : (
-              <div className="max-h-[430px] overflow-y-auto">
-                {todos.slice(0, 8).map((todo) => {
-                  const completed = isCompleted(
-                    todo.status
-                  );
-
-                  return (
-                    <div
-                      key={todo.id}
-                      className="flex min-w-0 items-start gap-3 border-b border-border px-5 py-4 last:border-b-0"
-                    >
-                      {/* Complete */}
-
-                      <button
-                        type="button"
-                        className="mt-0.5 shrink-0"
-                        onClick={() =>
-                          handleToggleTodo(todo.id)
-                        }
-                        title={
-                          completed
-                            ? "Mark as pending"
-                            : "Mark as completed"
-                        }
-                      >
-                        {completed ? (
-                          <CheckCircle2
-                            size={19}
-                            className="text-success-500"
-                          />
-                        ) : (
-                          <Circle
-                            size={19}
-                            className="text-ink-faint hover:text-primary-500"
-                          />
-                        )}
-                      </button>
-
-                      {/* Content */}
-
-                      <div className="min-w-0 flex-1">
-                        <h3
-                          className={`break-words text-sm font-semibold ${
-                            completed
-                              ? "text-ink-faint line-through"
-                              : "text-ink"
-                          }`}
-                        >
-                          {todo.title}
-                        </h3>
-
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <span className="text-xs text-ink-muted">
-                            Due:{" "}
-                            {toDateInputValue(
-                              todo.dueDate
-                            ) || "-"}
-                          </span>
-
-                          {todo.priority && (
-                            <Badge
-                              size="sm"
-                              variant={getPriorityVariant(
-                                todo.priority
-                              )}
-                              dot
-                            >
-                              {formatLabel(
-                                todo.priority
-                              )}
-                            </Badge>
-                          )}
-
-                          <Badge
-                            size="sm"
-                            variant={getStatusVariant(
-                              todo.status
-                            )}
-                            dot
-                          >
-                            {formatStatus(
-                              todo.status
-                            )}
-                          </Badge>
-                        </div>
-
-                        {todo.notes && (
-                          <p className="mt-2 break-words text-xs text-ink-faint">
-                            {todo.notes}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-
-                      <div className="flex shrink-0 items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          title="Edit"
-                          onClick={() =>
-                            openEditTodo(todo)
-                          }
-                        >
-                          <Pencil size={15} />
-                        </Button>
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          title="Delete"
-                          onClick={() =>
-                            handleDeleteTodo(
-                              todo.id
-                            )
-                          }
-                        >
-                          <Trash2
-                            size={15}
-                            className="text-danger-500"
-                          />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* --------------------------------
-            ASSIGNED TASKS
-        -------------------------------- */}
-
-        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-surface">
-          <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <div className="flex min-w-0 items-center gap-2">
-              <ClipboardList
-                size={17}
-                className="shrink-0 text-primary-600"
-              />
-
-              <h2 className="break-words font-semibold text-ink">
-                Assigned Tasks
-              </h2>
             </div>
-                <div className="ml-auto flex shrink-0 items-center gap-3">        
-             <Button variant="link"  onClick={() => navigate("/tasks?tab=assigned")}>View more</Button>
-             </div>
-          </div>
-
-          <div className="min-w-0">
-            {isLoadingTasks ? (
-              <div className="px-5 py-8 text-center text-sm text-ink-muted">
-                Loading assigned tasks...
-              </div>
-            ) : assignedTasks.length === 0 ? (
-              <div className="px-5 py-8 text-center text-sm text-ink-muted">
-                No assigned tasks yet.
-              </div>
-            ) : (
-              <div className="max-h-[430px] overflow-y-auto">
-                {assignedTasks
-                  .slice(0, 6)
-                  .map((task) => (
-                    <DashboardAssignedTask
-                      key={task.id}
-                      task={task}
-                      onView={openAssignedTask}
-                    />
-                  ))}
-              </div>
-            )}
-          </div>
-        </div>
+          );
+        })}
       </div>
+    )}
+  </div>
+
+  {/* ASSIGNED TASKS */}
+  <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-surface">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+      <div className="flex min-w-0 items-center gap-2">
+        <ClipboardList size={17} className="shrink-0 text-primary-600" />
+        <h2 className="font-semibold text-ink">Assigned Tasks</h2>
+      </div>
+
+      <div className="ml-auto flex shrink-0 items-center gap-3">
+        {can("ASSIGN_TASK") && (
+          <Button
+            size="sm"
+            leftIcon={<UserPlus size={16} />}
+            onClick={() => setIsAssignTaskModalOpen(true)}
+          >
+            Assign Task
+          </Button>
+        )}
+
+        <Button
+          variant="link"
+          onClick={() => navigate("/tasks?tab=assigned")}
+        >
+          View more
+        </Button>
+      </div>
+    </div>
+
+    {isLoadingTasks ? (
+      <div className="px-5 py-8 text-center text-sm text-ink-muted">
+        Loading assigned tasks...
+      </div>
+    ) : assignedTasks.length === 0 ? (
+      <div className="px-5 py-8 text-center text-sm text-ink-muted">
+        No assigned tasks yet.
+      </div>
+    ) : (
+      <div className="max-h-[430px] min-w-0 overflow-y-auto">
+        {assignedTasks.slice(0, 6).map((task) => (
+          <DashboardAssignedTask
+            key={task.id}
+            task={task}
+            onView={openAssignedTask}
+          />
+        ))}
+      </div>
+    )}
+  </div>
+</div>
+
 
       {/* --------------------------------
           RECENT ACTIVITY
       -------------------------------- */}
 
-      <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-surface p-5">
+      {/* <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-surface p-5">
         <div className="mb-4 flex items-center gap-2">
-          <Activity
-            size={17}
-            className="text-primary-600"
-          />
+          <Activity size={17} className="text-primary-600" />
 
-          <h2 className="font-semibold text-ink">
-            Recent Activity
-          </h2>
+          <h2 className="font-semibold text-ink">Recent Activity</h2>
         </div>
 
         <RecentActivityWidget />
-      </div>
+      </div> */}
 
       {/* --------------------------------
           TODO MODAL
@@ -627,11 +606,7 @@ export default function Dashboard() {
         }}
         mode={editingTodo ? "edit" : "create"}
         todo={editingTodo}
-        onSave={
-          editingTodo
-            ? handleEditTodo
-            : handleCreateTodo
-        }
+        onSave={editingTodo ? handleEditTodo : handleCreateTodo}
       />
 
       {/* --------------------------------
@@ -655,9 +630,7 @@ export default function Dashboard() {
       {can("ASSIGN_TASK") && (
         <AssignTaskModal
           isOpen={isAssignTaskModalOpen}
-          onClose={() =>
-            setIsAssignTaskModalOpen(false)
-          }
+          onClose={() => setIsAssignTaskModalOpen(false)}
           onSave={handleAssignTask}
         />
       )}
@@ -671,12 +644,15 @@ export default function Dashboard() {
 
 function DashboardAssignedTask({ task, onView }) {
   const latestComment =
-    task.comments?.length > 0
-      ? task.comments[task.comments.length - 1]
-      : null;
+    task.comments?.length > 0 ? task.comments[task.comments.length - 1] : null;
+  const overdue = isOverdue(task.dueDate, task.status);
 
   return (
-    <div className="border-b border-border px-5 py-4 last:border-b-0">
+    <div
+      className={`border-b px-5 py-4 last:border-b-0 ${
+        overdue ? "border-red-200 bg-red-50" : "border-border"
+      }`}
+    >
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         {/* Content */}
 
@@ -695,29 +671,16 @@ function DashboardAssignedTask({ task, onView }) {
             </span>
 
             <span className="text-xs text-ink-muted">
-              Due:{" "}
-              {toDateInputValue(task.dueDate) || "-"}
+              Due: {toDateInputValue(task.dueDate) || "-"}
             </span>
 
             {task.priority && (
-              <Badge
-                size="sm"
-                variant={getPriorityVariant(
-                  task.priority
-                )}
-                dot
-              >
+              <Badge size="sm" variant={getPriorityVariant(task.priority)} dot>
                 {formatLabel(task.priority)}
               </Badge>
             )}
 
-            <Badge
-              size="sm"
-              variant={getStatusVariant(
-                task.status
-              )}
-              dot
-            >
+            <Badge size="sm" variant={getStatusVariant(task.status)} dot>
               {formatStatus(task.status)}
             </Badge>
           </div>
@@ -726,9 +689,7 @@ function DashboardAssignedTask({ task, onView }) {
 
           {task.managerNotes && (
             <p className="mt-2 break-words text-xs text-ink-faint">
-              <span className="font-medium text-ink-muted">
-                Instructions:
-              </span>{" "}
+              <span className="font-medium text-ink-muted">Instructions:</span>{" "}
               {task.managerNotes}
             </p>
           )}
@@ -758,7 +719,7 @@ function DashboardAssignedTask({ task, onView }) {
           className="w-full shrink-0 sm:w-auto"
           onClick={() => onView(task)}
         >
-          <Pencil size={16}/>
+          <Pencil size={16} />
         </Button>
       </div>
     </div>

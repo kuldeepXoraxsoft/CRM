@@ -6,6 +6,7 @@ import {
   Pencil,
   Trash2,
   CalendarClock,
+  FileText,
 } from "lucide-react";
 
 import { Button, Badge } from "../../components/ui";
@@ -504,7 +505,16 @@ export default function Leads() {
                     />
                   </Button>
                 )}
-
+                 <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Update Follow-up"
+                  onClick={() =>
+                    openFollowUp(row)
+                  }
+                >
+                  <FileText color="gray" size={16} />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -513,7 +523,7 @@ export default function Leads() {
                     openFollowUp(row)
                   }
                 >
-                  <CalendarClock size={16} />
+                  <CalendarClock color="gray" size={16} />
                 </Button>
 
                 <Button
@@ -524,7 +534,7 @@ export default function Leads() {
                     openEditLead(row)
                   }
                 >
-                  <Pencil size={16} />
+                  <Pencil color="gray" size={16} />
                 </Button>
 
                 <Button

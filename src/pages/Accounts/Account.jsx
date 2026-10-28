@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import {
+  FileText,
   Plus,
-  Briefcase,
   Pencil,
   Trash2,
   CalendarClock,
   Link,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import { Button, Badge } from "../../components/ui";
 import DataTable from "../../components/ui/DataTable";
@@ -26,7 +27,7 @@ import useDebounce from "../../hooks/useDebouce";
 import "./Account.css";
 
 export default function Account() {
-
+  const navigate = useNavigate();
   const [accounts, setAccounts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -288,6 +289,21 @@ export default function Account() {
 
 
   const columns = ACCOUNT_TABLE_COLUMNS.map((col) => {
+    if (col.key === "customerName") {
+  return {
+    ...col,
+    render: (row) => (
+      <button
+        type="button"
+        className="max-w-full truncate text-left font-medium text-ink underline-offset-4 hover:text-primary-600 hover:underline"
+        onClick={() => navigate(`/accounts/${row.id}`)}
+        title={`View ${row.customerName || "account"}`}
+      >
+        {row.customerName || "Unnamed account"}
+      </button>
+    ),
+  };
+}
     if (col.key === "cyvoraAM") {
       return {
         ...col,
@@ -335,7 +351,7 @@ export default function Account() {
 
             {row.followUpHistory?.length > 0 && (
               <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary-500 px-1 text-[10px] font-bold text-white">
-                {row.followUpHistory.length}
+                {/* {row.followUpHistory.length} */}<CalendarClock size={11}/>
               </span>
             )}
           </button>
@@ -420,6 +436,16 @@ export default function Account() {
 
             renderActions={(row) => (
               <div className="flex items-center gap-1">
+                 <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Documents"
+                 onClick={() => {
+                    navigate(`/accounts/${row.id}?tab=documents`);
+            }}
+                >
+                  <FileText color="gray" size={16} />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -428,7 +454,7 @@ export default function Account() {
                     openFollowUp(row)
                   }
                 >
-                  <CalendarClock size={16} />
+                  <CalendarClock color="gray" size={16} />
                 </Button>
 
                 <Button
@@ -439,7 +465,7 @@ export default function Account() {
                     openEditAccount(row)
                   }
                 >
-                  <Pencil size={16} />
+                  <Pencil size={16} color="gray" />
                 </Button>
 
                 <Button

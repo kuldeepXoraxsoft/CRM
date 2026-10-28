@@ -32,6 +32,9 @@ export const PERMISSIONS = {
   EDIT_DEPARTMENT: ["superAdmin"],
   DELETE_DEPARTMENT: ["superAdmin"],
 
+  MANAGE_ORGANIZATION: ["superAdmin"],
+  MANAGE_EMAIL_CONFIG: ["admin", "superAdmin"],
+
   VIEW_ADMINS: ["superAdmin"],
   ADD_ADMIN: ["superAdmin"],
   EDIT_ADMIN: ["superAdmin"],

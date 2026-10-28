@@ -4,10 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { Button, Input, Checkbox } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
+import { useOrganization } from "../../context/OrganizationContext";
 import "./Login.css";
-
-// Per-company deployment: set VITE_APP_NAME in .env (falls back to "CRM")
-const APP_NAME = import.meta.env.VITE_APP_NAME || "CRM";
 
 // Static preview of the lead pipeline shown on the left panel
 // const PIPELINE = [
@@ -20,6 +18,8 @@ const APP_NAME = import.meta.env.VITE_APP_NAME || "CRM";
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  // Company name + logo come from Settings > Organization
+  const { companyName: APP_NAME, logoUrl } = useOrganization();
 
   const [form, setForm] = useState({ email: "", password: "", remember: false });
   const [showPassword, setShowPassword] = useState(false);
@@ -58,7 +58,7 @@ export default function Login() {
       {/* ============ LEFT PANEL ============ */}
       <aside className="login-brand">
         <div className="brand-row">
-          <img src="/logo.svg" alt="" className="brand-logo" />
+          <img src={logoUrl} alt="" className="brand-logo" />
           <span className="brand-name">{APP_NAME}</span>
         </div>
 
@@ -87,7 +87,7 @@ export default function Login() {
         <div className="login-wrap">
           {/* Mobile logo */}
           <div className="brand-row brand-row-mobile">
-            <img src="/logo.svg" alt="" className="brand-logo" />
+            <img src={logoUrl} alt="" className="brand-logo" />
             <span className="brand-name">{APP_NAME}</span>
           </div>
 

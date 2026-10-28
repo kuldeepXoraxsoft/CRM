@@ -174,6 +174,7 @@ export const createEmployee = asyncHandler(async (req, res) => {
       to: employee.email,
       name: employee.name,
       temporaryPassword: password,
+      departmentId: employee.departmentId,
     }).catch((err) => {
       console.error("Welcome email failed:", err.message);
     });

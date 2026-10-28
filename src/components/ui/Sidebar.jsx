@@ -3,11 +3,12 @@ import { X } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { useAuth } from "../../context/AuthContext";
 import { getNavItems } from "../../config/navigation";
+import { useOrganization } from "../../context/OrganizationContext";
 import { Users } from "lucide-react";
 
 export default function Sidebar({ isOpen = false, onClose }) {
   const { currentUser } = useAuth();
-  console.log(currentUser?.role);
+  const { companyName, logoUrl } = useOrganization();
 
   const navItems = getNavItems(currentUser?.role);
 
@@ -44,7 +45,7 @@ export default function Sidebar({ isOpen = false, onClose }) {
           <div className="flex min-w-0 items-center gap-2">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md ">
               {/* <Users size={18} /> */}
-             <img src="/logo.svg" alt="" className="brand-logo" />
+             <img src={logoUrl} alt="" className="brand-logo" />
             </span>
 
             <span
@@ -54,7 +55,7 @@ export default function Sidebar({ isOpen = false, onClose }) {
                 "md:group-hover:opacity-100"
               )}
             >
-              CRM 
+              {companyName}
             </span>
           </div>
 

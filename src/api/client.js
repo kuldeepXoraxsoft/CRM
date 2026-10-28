@@ -3,11 +3,8 @@ import axios from "axios";
 const TOKEN_KEY = "access_token";
 const USER_KEY = "user";
 
-// AuthContext listens to this event and logs the user out instantly (no page reload)
 const UNAUTHORIZED_EVENT = "auth:unauthorized";
 
-// Public auth endpoints: never send a (possibly stale) token to them,
-// and a 401 from them (e.g. wrong password) must NOT trigger a logout.
 const PUBLIC_AUTH_URL = /\/auth\/(login|forgot-password|reset-password)/;
 
 const client = axios.create({

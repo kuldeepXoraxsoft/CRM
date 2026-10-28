@@ -34,6 +34,10 @@ export const PERMISSIONS = {
   VIEW_TEAM_EMPLOYEES: [ROLES.MANAGER, ROLES.ADMIN],
   VIEW_ALL_MANAGERS: [ROLES.ADMIN],
 
+  // Settings > Organization (must match backend/src/constants/permissions.js)
+  MANAGE_ORGANIZATION: ["superAdmin"],
+  MANAGE_EMAIL_CONFIG: [ROLES.ADMIN, "superAdmin"],
+
   // Teams
   CREATE_TEAM: [ROLES.MANAGER, ROLES.ADMIN],
   EDIT_TEAM: [ROLES.MANAGER, ROLES.ADMIN],

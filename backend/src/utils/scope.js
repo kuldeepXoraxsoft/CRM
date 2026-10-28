@@ -137,3 +137,46 @@ export async function buildTaskScopeWhere(currentUser) {
     },
   };
 }
+
+/**
+ * Meetings a user may see: hosted by / inviting them (employee), plus their
+ * direct reports' meetings (manager), whole department (admin), everything
+ * (superAdmin). Shared by the meetings list and the dashboard calendar.
+ */
+export async function buildMeetingScopeWhere(currentUser) {
+  if (currentUser.role === "superAdmin") return {};
+
+  if (!currentUser.departmentId) {
+    return { departmentId: "__NO_DEPARTMENT__" };
+  }
+
+  if (currentUser.role === "admin") {
+    return { departmentId: currentUser.departmentId };
+  }
+
+  if (currentUser.role === "manager") {
+    const employees = await prisma.user.findMany({
+      where: { managerId: currentUser.id },
+      select: { id: true },
+    });
+    const ids = employees.map((employee) => employee.id);
+
+    return {
+      departmentId: currentUser.departmentId,
+      OR: [
+        { hostId: currentUser.id },
+        { participants: { some: { userId: currentUser.id } } },
+        { hostId: { in: ids } },
+        { participants: { some: { userId: { in: ids } } } },
+      ],
+    };
+  }
+
+  return {
+    departmentId: currentUser.departmentId,
+    OR: [
+      { hostId: currentUser.id },
+      { participants: { some: { userId: currentUser.id } } },
+    ],
+  };
+}

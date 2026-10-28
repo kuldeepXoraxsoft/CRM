@@ -3,6 +3,9 @@ import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { buildLeadAccountScopeWhere } from "../utils/scope.js";
 import { notifyAccountStakeholders } from "../helpers/accountNotificationHelper.js";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { uploadDir } from "../middleware/accountDocumentUpload.js";
 
 const ACCOUNT_INCLUDE = {
   cyvoraAM: {
@@ -297,3 +300,189 @@ function buildAccountData(
 
   return data;
 }
+
+export const getAccountFollowUpHistory = asyncHandler(
+  async (req, res) => {
+    const scope = await buildLeadAccountScopeWhere(req.user);
+
+    // Verify that the account exists and is accessible to this user.
+    const account = await prisma.account.findFirst({
+      where: {
+        id: req.params.id,
+        ...scope,
+      },
+      select: { id: true },
+    });
+
+    if (!account) {
+      throw new ApiError(404, "Account not found.");
+    }
+
+    const page = Math.max(
+      parseInt(req.query.page, 10) || 1,
+      1
+    );
+
+    // Keep page size fixed at 10.
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
+    const where = {
+      accountId: account.id,
+    };
+
+    const [data, total] = await prisma.$transaction([
+      prisma.followUpEntry.findMany({
+        where,
+        orderBy: [
+          { updatedAt: "desc" },
+          { id: "desc" },
+        ],
+        skip,
+        take: limit,
+      }),
+
+      prisma.followUpEntry.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    });
+  }
+);
+
+async function getAccessibleAccount(req) {
+  const scope = await buildLeadAccountScopeWhere(req.user);
+
+  const account = await prisma.account.findFirst({
+    where: {
+      id: req.params.id,
+      ...scope,
+    },
+    select: { id: true },
+  });
+
+  if (!account) {
+    throw new ApiError(404, "Account not found.");
+  }
+
+  return account;
+}
+
+async function removeStoredDocument(storageName) {
+  // Never accept a path supplied by the client.
+  if (!/^[a-f0-9-]+\.(pdf|png|jpg|jpeg|webp|doc|docx|xls|xlsx|csv|txt)$/i.test(storageName)) {
+    return;
+  }
+
+  await fs.unlink(path.join(uploadDir, storageName)).catch((err) => {
+    if (err.code !== "ENOENT") throw err;
+  });
+}
+
+export const listAccountDocuments = asyncHandler(async (req, res) => {
+  const account = await getAccessibleAccount(req);
+
+  const documents = await prisma.accountDocument.findMany({
+    where: { accountId: account.id },
+    orderBy: { uploadedAt: "desc" },
+  });
+
+  res.json({ data: documents });
+});
+
+export const uploadAccountDocument = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new ApiError(400, "Please choose a document to upload.");
+  }
+
+  try {
+    const title = String(req.body.title || "").trim();
+
+    if (!title) {
+      throw new ApiError(400, "Document title is required.");
+    }
+
+    if (title.length > 150) {
+      throw new ApiError(400, "Document title cannot exceed 150 characters.");
+    }
+
+    const account = await getAccessibleAccount(req);
+
+    const document = await prisma.accountDocument.create({
+      data: {
+        title,
+        originalName: path.basename(req.file.originalname),
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        storageName: req.file.filename,
+        accountId: account.id,
+      },
+    });
+
+    res.status(201).json({ document });
+  } catch (error) {
+    await removeStoredDocument(req.file.filename).catch(() => {});
+    throw error;
+  }
+});
+
+export const downloadAccountDocument = asyncHandler(async (req, res) => {
+  const account = await getAccessibleAccount(req);
+
+  const document = await prisma.accountDocument.findFirst({
+    where: {
+      id: req.params.documentId,
+      accountId: account.id,
+    },
+  });
+
+  if (!document) {
+    throw new ApiError(404, "Document not found.");
+  }
+
+  const filePath = path.join(uploadDir, document.storageName);
+
+  try {
+    await fs.access(filePath);
+  } catch {
+    throw new ApiError(404, "The stored document file could not be found.");
+  }
+
+  res.download(filePath, document.originalName);
+});
+
+export const deleteAccountDocument = asyncHandler(async (req, res) => {
+  const account = await getAccessibleAccount(req);
+
+  const document = await prisma.accountDocument.findFirst({
+    where: {
+      id: req.params.documentId,
+      accountId: account.id,
+    },
+  });
+
+  if (!document) {
+    throw new ApiError(404, "Document not found.");
+  }
+
+  await prisma.accountDocument.delete({
+    where: { id: document.id },
+  });
+
+  await removeStoredDocument(document.storageName).catch((error) => {
+    console.error("Could not remove stored document:", error.message);
+  });
+
+  res.json({ message: "Document deleted successfully." });
+});

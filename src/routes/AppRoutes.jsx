@@ -19,6 +19,7 @@ import AccountRoutes from "../pages/Routes/Routes";
 import Management from "../pages/Management/Management";
 import Meetings from "../pages/Meetings/Meetings";
 import Tickets from "../pages/Tickets/Tickets";
+import AccountDetails from "../pages/Accounts/AccountDetails";
 
 // Same role groups as config/navigation.js (sidebar), so menu and access always match
 const STAFF = ["employee", "manager", "admin"]; // everyone except superAdmin
@@ -54,6 +55,10 @@ export default function AppRoutes() {
                     <Route
                         path="/accounts"
                         element={<ProtectedRoute allowedRoles={STAFF}><Account /></ProtectedRoute>}
+                    />
+                    <Route 
+                        path="/accounts/:id" 
+                        element={<ProtectedRoute allowedRoles={STAFF}><AccountDetails /></ProtectedRoute>}
                     />
                     <Route
                         path="/leads"

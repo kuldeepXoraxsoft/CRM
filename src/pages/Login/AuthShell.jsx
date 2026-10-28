@@ -1,14 +1,16 @@
 import "./Login.css";
 
-const APP_NAME = import.meta.env.VITE_APP_NAME || "CRM";
+import { useOrganization } from "../../context/OrganizationContext";
 
 // Same left/right layout as the Login page, so all auth pages look consistent
 export default function AuthShell({ title, subtitle, children }) {
+  const { companyName: APP_NAME, logoUrl } = useOrganization();
+
   return (
     <div className="login-page">
       <aside className="login-brand">
         <div className="brand-row">
-          <img src="/logo.svg" alt="" className="brand-logo" />
+          <img src={logoUrl} alt="" className="brand-logo" />
           <span className="brand-name">{APP_NAME}</span>
         </div>
 
@@ -35,7 +37,7 @@ export default function AuthShell({ title, subtitle, children }) {
       <main className="login-main">
         <div className="login-wrap">
           <div className="brand-row brand-row-mobile">
-            <img src="/logo.svg" alt="" className="brand-logo" />
+            <img src={logoUrl} alt="" className="brand-logo" />
             <span className="brand-name">{APP_NAME}</span>
           </div>
 

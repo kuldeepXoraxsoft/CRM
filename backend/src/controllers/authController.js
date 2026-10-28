@@ -155,7 +155,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
   // await nahi kar rahe taaki response time se pata na chale email exist karta hai ya nahi
-  sendPasswordResetEmail(user.email, resetUrl, EXPIRY_MINUTES).catch((err) =>
+  sendPasswordResetEmail(user.email, resetUrl, EXPIRY_MINUTES, user.departmentId).catch((err) =>
     console.error("Reset email failed:", err.message)
   );
 
@@ -218,7 +218,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
     });
   });
 
-  sendPasswordChangedEmail(record.user.email).catch((err) =>
+  sendPasswordChangedEmail(record.user.email, record.user.departmentId).catch((err) =>
     console.error("Confirmation email failed:", err.message)
   );
 

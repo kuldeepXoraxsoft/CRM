@@ -4,6 +4,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { logActivity } from "../utils/activityLogger.js";
 import { notifyMany } from "../services/notificationService.js";
 import { getPagination } from "../utils/pagination.js";
+import { buildMeetingScopeWhere } from "../utils/scope.js";
 
 const USER_SELECT = { id: true, name: true, email: true, role: true, departmentId: true };
 const INCLUDE = {
@@ -14,26 +15,8 @@ const INCLUDE = {
   participants: { include: { user: { select: USER_SELECT } } },
 };
 
-async function scope(req) {
-  if (req.user.role === "superAdmin") return {};
-  if (!req.user.departmentId) return { departmentId: "__NO_DEPARTMENT__" };
-  if (req.user.role === "admin") return { departmentId: req.user.departmentId };
-  if (req.user.role === "manager") {
-    const employees = await prisma.user.findMany({ where: { managerId: req.user.id }, select: { id: true } });
-    return { departmentId: req.user.departmentId, OR: [
-      { hostId: req.user.id },
-      { participants: { some: { userId: req.user.id } } },
-      { hostId: { in: employees.map(x => x.id) } },
-      { participants: { some: { userId: { in: employees.map(x => x.id) } } } },
-    ]};
-  }
-  return { departmentId: req.user.departmentId, OR: [
-    { hostId: req.user.id }, { participants: { some: { userId: req.user.id } } }
-  ]};
-}
-
 export const listMeetings = asyncHandler(async (req, res) => {
-  const scopeWhere = await scope(req);
+  const scopeWhere = await buildMeetingScopeWhere(req.user);
   const { page, limit, skip } = getPagination(req);
   const search = req.query.search?.trim();
   const where = search

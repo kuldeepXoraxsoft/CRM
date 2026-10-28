@@ -16,10 +16,13 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import managementRoutes from "./routes/managementRoutes.js";
 import meetingRoutes from "./routes/meetingRoutes.js";
 import ticketRoutes from "./routes/ticketRoutes.js";
+import calendarRoutes from "./routes/calendarRoutes.js";
+import organizationRoutes from "./routes/organizationRoutes.js";
 
 const app = express();
 
 app.use(cors({ origin: process.env.CLIENT_ORIGIN, credentials: true }));
+app.use("/api/organization", express.json({ limit: "3mb" }), organizationRoutes);
 app.use(express.json());
 
 app.get("/health", (req, res) => res.json({ status: "ok" }));
@@ -37,6 +40,8 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/management", managementRoutes);
 app.use("/api/meetings", meetingRoutes);
 app.use("/api/tickets", ticketRoutes);
+app.use ("/api/calendar",calendarRoutes)
+app.use
 
 app.use((req, res) => res.status(404).json({ message: "Route not found." }));
 app.use(errorHandler);

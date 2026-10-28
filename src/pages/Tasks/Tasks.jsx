@@ -221,6 +221,8 @@ export default function Tasks() {
       label: "Status",
       render: (row) => <Badge variant={STATUS_VARIANT[row.status]}>{row.status}</Badge>,
     },
+    { key: "createdAt", label: "Created At", render: (row) => toDateInputValue(row.dueDate) || "-" },
+    { key: "updatedAt", label: "Last Update", render: (row) => toDateInputValue(row.dueDate) || "-" },
     {
       key: "notes",
       label: "Notes",
@@ -253,6 +255,8 @@ export default function Tasks() {
       label: "Status",
       render: (row) => <Badge variant={STATUS_VARIANT[row.status]}>{row.status}</Badge>,
     },
+        { key: "createdAt", label: "Created At", render: (row) => toDateInputValue(row.dueDate) || "-" },
+    { key: "updatedAt", label: "Last Update", render: (row) => toDateInputValue(row.dueDate) || "-" },
     {
       key: "latestUpdate",
       label: "Latest Update",
